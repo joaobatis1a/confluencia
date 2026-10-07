@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/*
+  Confluência — Design System v2.1
+  Fonte: confluencia-design.pdf
+  "Amarelo nunca entra sozinho" — sempre em pares de degraus da mesma escala.
+*/
+@theme {
+  /* Amarelo principal */
+  --color-amarelo-50: #fffbea;
+  --color-amarelo-100: #fff3c4;
+  --color-amarelo-300: #ffdd75;
+  --color-amarelo-500: #f5b800;
+  --color-amarelo-700: #b8860b;
+  --color-amarelo-900: #6b4e00;
+
+  /* Neutros (grafite quente) */
+  --color-grafite-50: #fdfbf4;
+  --color-grafite-200: #e4e1d9;
+  --color-grafite-300: #cfcbc0;
+  --color-grafite-500: #7c776c;
+  --color-grafite-700: #47443d;
+  --color-grafite-900: #1b1813;
+
+  /* Status: Verde — Aprovado/Concluído */
+  --color-status-verde-50: #dcfce7;
+  --color-status-verde-500: #16a34a;
+  --color-status-verde-700: #166534;
+
+  /* Status: Vermelho — Rejeitado/Urgente */
+  --color-status-vermelho-50: #fee2e2;
+  --color-status-vermelho-500: #dc2626;
+  --color-status-vermelho-700: #991b1b;
+
+  /* Status: Azul — Em andamento/Info */
+  --color-status-azul-50: #dbeafe;
+  --color-status-azul-500: #2563eb;
+  --color-status-azul-700: #1e3a8a;
+
+  /* Status: Terracota — Pendente */
+  --color-status-terracota-50: #ffe8d6;
+  --color-status-terracota-500: #c2410c;
+  --color-status-terracota-700: #7c2d12;
+
+  /* Tipografia */
+  --font-heading: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "Public Sans", system-ui, sans-serif;
+
+  /* Raio — cantos generosos: 10px inputs/botões, 16px cards, pill badges */
+  --radius-field: 10px;
+  --radius-card: 16px;
+}
+
+body {
+  background: var(--color-grafite-50);
+  color: var(--color-grafite-900);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+}
