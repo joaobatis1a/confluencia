@@ -1,0 +1,65 @@
+import type { Projeto } from '../../types/database'
+
+// Dados mock — Tarefa 2.1 da Ana ("telas estáticas, projetos inventados").
+export const MOCK_PROJETOS: Projeto[] = [
+  {
+    id: 'p1',
+    orgao_id: 'mock-orgao-1',
+    nome: 'Requalificação da Av. Norte',
+    descricao: 'Nova ciclovia, iluminação de LED e recapeamento em 3km de extensão.',
+    categoria: 'mobilidade',
+    status: 'em_consulta',
+    origem_post_id: null,
+    timeline: [
+      { nome: 'Projeto técnico', data_prevista: '2026-09-01', data_real: '2026-09-03' },
+      { nome: 'Licitação', data_prevista: '2026-11-01', data_real: null },
+      { nome: 'Início da obra', data_prevista: '2027-01-15', data_real: null },
+    ],
+    consulta_fim: '2026-11-20T23:59:59Z',
+    created_at: '2026-08-20T10:00:00Z',
+  },
+  {
+    id: 'p2',
+    orgao_id: 'mock-orgao-1',
+    nome: 'Revitalização da Praça do Derby',
+    descricao: 'Novos brinquedos, poda de árvores e academia ao ar livre.',
+    categoria: 'pracas_lazer',
+    status: 'em_execucao',
+    origem_post_id: '4',
+    timeline: [
+      { nome: 'Projeto técnico', data_prevista: '2026-06-01', data_real: '2026-06-05' },
+      { nome: 'Licitação', data_prevista: '2026-07-01', data_real: '2026-07-10' },
+      { nome: 'Início da obra', data_prevista: '2026-08-01', data_real: '2026-08-02' },
+      { nome: 'Entrega', data_prevista: '2026-12-01', data_real: null },
+    ],
+    consulta_fim: null,
+    created_at: '2026-05-10T10:00:00Z',
+  },
+  {
+    id: 'p3',
+    orgao_id: 'mock-orgao-1',
+    nome: 'Nova UPA em Várzea',
+    descricao: 'Unidade de pronto atendimento com 24h de funcionamento.',
+    categoria: 'saude',
+    status: 'rejeitado',
+    origem_post_id: null,
+    timeline: [{ nome: 'Projeto técnico', data_prevista: '2026-04-01', data_real: '2026-04-01' }],
+    consulta_fim: '2026-05-01T23:59:59Z',
+    created_at: '2026-03-01T10:00:00Z',
+  },
+  {
+    id: 'p4',
+    orgao_id: 'mock-orgao-1',
+    nome: 'Drenagem da Rua das Flores',
+    descricao: 'Obra de drenagem para resolver alagamentos recorrentes.',
+    categoria: 'saneamento',
+    status: 'concluido',
+    origem_post_id: '3',
+    timeline: [
+      { nome: 'Projeto técnico', data_prevista: '2026-01-01', data_real: '2026-01-01' },
+      { nome: 'Obra', data_prevista: '2026-03-01', data_real: '2026-03-20' },
+    ],
+    consulta_fim: null,
+    created_at: '2025-12-01T10:00:00Z',
+  },
+]
