@@ -2,6 +2,12 @@
 
 **Gerado em:** 07/10/2026 · **Apresentação:** 05/11/2026 (quinta-feira) · **Dias disponíveis:** 29
 
+## Atualização de 08/10 — Semana 1 adiantada
+
+Boa parte da Semana 1 (e um adiantamento da Semana 2) já foi implementada em [PR #1](https://github.com/joaobatis1a/confluencia/pull/1): mapa Leaflet, captura de coordenadas, Feed completo (mock), módulo Projetos completo (mock), autenticação via Supabase (código pronto) e as 4 migrations SQL do banco (`posts`, `profiles`, `projetos`, `votos`, com RLS). Cada guia individual em PDF tem uma seção "Status atual" explicando o que já está pronto e o próximo passo de cada um.
+
+**Bloqueio real agora:** ainda não existe um projeto Supabase de verdade — isso é 100% do Guilherme. Até ele criar o projeto e aplicar as migrations (`supabase/README.md`), João e Ana seguem trabalhando com dados mock, o que já é suficiente para avançar o resto da Semana 2.
+
 ## Por que o cronograma mudou
 
 O plano original previa 6 semanas de trabalho com 2 semanas de margem (8 semanas reais). Até hoje (07/10), o repositório ainda estava vazio — nenhum código commitado — então, na prática, o time está no dia zero da implementação, mesmo com os documentos de planejamento prontos desde o início de setembro.
