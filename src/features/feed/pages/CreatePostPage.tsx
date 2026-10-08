@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../context/AuthContext'
 import LocationPicker, { isWithinRecifeMetro } from '../../../components/LocationPicker'
-import { Button, Card, FormError, Label, Select, TextArea } from '../../../components/ui'
+import { Button, Card, FormError, Label, Select, TextArea, TextField } from '../../../components/ui'
 import { CATEGORIAS, type Categoria } from '../../../types/database'
 
 // Tarefas 2.1 (formulário), 2.2 (coordenadas) e 3.2 (validação) do João, já unificadas.
@@ -80,12 +80,7 @@ export default function CreatePostPage() {
           </div>
           <div>
             <Label>Bairro</Label>
-            <input
-              className="w-full rounded-[var(--radius-field)] border border-grafite-300 px-3.5 py-2.5 text-sm focus:outline-none focus:border-amarelo-500 focus:ring-2 focus:ring-amarelo-100"
-              value={bairro}
-              onChange={(e) => setBairro(e.target.value)}
-              placeholder="Ex: Boa Vista"
-            />
+            <TextField value={bairro} onChange={(e) => setBairro(e.target.value)} placeholder="Ex: Boa Vista" />
           </div>
           <div>
             <Label>Descrição</Label>

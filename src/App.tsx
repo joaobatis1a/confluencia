@@ -8,6 +8,7 @@ import ProjetoDetailPage from './features/projetos/pages/ProjetoDetailPage'
 import PainelGestorPage from './features/projetos/pages/PainelGestorPage'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
+import RequireInstitutional from './components/RequireInstitutional'
 
 function NavBar() {
   const { user, signOut } = useAuth()
@@ -60,7 +61,14 @@ function App() {
         <Route path="/feed/:id" element={<PostDetailPage />} />
         <Route path="/projetos" element={<ProjetosPage />} />
         <Route path="/projetos/:id" element={<ProjetoDetailPage />} />
-        <Route path="/painel" element={<PainelGestorPage />} />
+        <Route
+          path="/painel"
+          element={
+            <RequireInstitutional>
+              <PainelGestorPage />
+            </RequireInstitutional>
+          }
+        />
         <Route path="/entrar" element={<LoginPage />} />
         <Route path="/cadastro" element={<SignupPage />} />
       </Routes>

@@ -32,6 +32,16 @@ create policy "profiles: so o dono edita o proprio perfil"
   on profiles for update
   using (auth.uid() = id);
 
+-- A policy acima restringe a LINHA (só a própria), mas não a COLUNA — sem isso,
+-- qualquer usuário logado poderia rodar
+--   update profiles set institucional_verificado = true where id = auth.uid()
+-- e se autopromover a conta institucional, furando a aprovação manual do
+-- Guilherme. Revoga o UPDATE genérico e libera só a coluna que o usuário deve
+-- poder editar; institucional_verificado/orgao_nome só mudam via painel do
+-- Supabase (service role, que ignora RLS e esses grants).
+revoke update on profiles from authenticated;
+grant update (nome) on profiles to authenticated;
+
 -- projetos ------------------------------------------------------------------
 create policy "projetos: leitura publica"
   on projetos for select

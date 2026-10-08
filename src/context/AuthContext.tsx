@@ -1,10 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import type { Profile } from '../types/database'
 
 interface AuthContextValue {
   user: User | null
   session: Session | null
+  /** Linha da tabela `profiles` do usuário logado — usada para checar institucional_verificado (ex: guardar /painel). null enquanto carrega ou se deslogado. */
+  profile: Profile | null
   loading: boolean
   signUp: (email: string, password: string, nome: string) => Promise<{ error: string | null }>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
@@ -23,13 +26,20 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setLoading(false)
-    })
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        setSession(data.session)
+      })
+      .catch(() => {
+        // Sem projeto Supabase real configurado ainda (ver src/lib/supabase.ts)
+        // — segue sem sessão em vez de deixar a promise rejeitada solta.
+      })
+      .finally(() => setLoading(false))
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession)
@@ -37,6 +47,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => listener.subscription.unsubscribe()
   }, [])
+
+  // Busca o perfil (institucional_verificado etc.) sempre que o usuário muda —
+  // é o que RequireInstitutional usa para proteger /painel.
+  useEffect(() => {
+    const userId = session?.user.id
+    if (!userId) {
+      setProfile(null)
+      return
+    }
+    let cancelled = false
+    async function loadProfile() {
+      try {
+        const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+        if (!cancelled) setProfile(data)
+      } catch {
+        if (!cancelled) setProfile(null)
+      }
+    }
+    loadProfile()
+    return () => {
+      cancelled = true
+    }
+  }, [session?.user.id])
 
   async function signUp(email: string, password: string, nome: string) {
     const { error } = await supabase.auth.signUp({
@@ -58,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user: session?.user ?? null, session, loading, signUp, signIn, signOut }}
+      value={{ user: session?.user ?? null, session, profile, loading, signUp, signIn, signOut }}
     >
       {children}
     </AuthContext.Provider>
