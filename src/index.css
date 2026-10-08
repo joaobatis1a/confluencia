@@ -42,6 +42,16 @@
   --color-status-terracota-500: #c2410c;
   --color-status-terracota-700: #7c2d12;
 
+  /* Categorias do Feed — identidade própria, não reaproveita cor de status
+     (uma coisa é "em que estágio está o projeto", outra é "que assunto é
+     este post"; usar a mesma escala pros dois confundiria à primeira vista). */
+  --color-categoria-rosa-50: #fce7f3;
+  --color-categoria-rosa-700: #9d174d;
+  --color-categoria-ciano-50: #cffafe;
+  --color-categoria-ciano-700: #155e75;
+  --color-categoria-violeta-50: #ede9fe;
+  --color-categoria-violeta-700: #5b21b6;
+
   /* Tipografia */
   --font-heading: "Bricolage Grotesque", system-ui, sans-serif;
   --font-body: "Public Sans", system-ui, sans-serif;

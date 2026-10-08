@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { MOCK_PROJETOS } from '../mock'
 import { Button, Card } from '../../../components/ui'
 import StatusBadge from '../../../components/StatusBadge'
@@ -53,11 +54,20 @@ export default function ProjetoDetailPage() {
         <h2 className="font-heading text-sm font-bold text-grafite-900 mb-3">Linha do tempo</h2>
         <ol className="space-y-3">
           {projeto.timeline.map((marco, i) => (
-            <li key={i} className="flex items-center gap-3 text-sm">
-              <span
+            <motion.li
+              key={i}
+              className="flex items-center gap-3 text-sm"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.08 }}
+            >
+              <motion.span
                 className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${
                   marco.data_real ? 'bg-status-verde-500' : 'bg-grafite-300'
                 }`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: i * 0.08 + 0.1, type: 'spring', stiffness: 400 }}
               />
               <div className="flex-1">
                 <span className="font-medium text-grafite-900">{marco.nome}</span>
@@ -67,34 +77,46 @@ export default function ProjetoDetailPage() {
                     ` · concluído ${new Date(marco.data_real).toLocaleDateString('pt-BR')}`}
                 </span>
               </div>
-            </li>
+            </motion.li>
           ))}
         </ol>
       </Card>
 
       {projeto.status === 'em_consulta' && (
-        <Card className="mt-4">
+        <Card className="mt-4 overflow-hidden">
           <h2 className="font-heading text-sm font-bold text-grafite-900 mb-1">Consulta pública</h2>
           <p className="text-xs text-grafite-500 mb-4">
             Seu voto é secreto (nunca vinculado ao seu nome publicamente) e consultivo — não obriga a
             decisão final do governo, mas gera um registro oficial de opinião.
           </p>
-          {voto ? (
-            <div className="rounded-[var(--radius-field)] bg-status-verde-50 p-3 text-sm text-status-verde-700">
-              Voto registrado: <b>{voto === 'favor' ? 'a favor' : 'contra'}</b>.
-              <br />
-              Comprovante: <code className="text-xs">{comprovante}</code>
-            </div>
-          ) : (
-            <div className="flex gap-3">
-              <Button onClick={() => votar('favor')} className="flex-1">
-                Votar a favor
-              </Button>
-              <Button variant="secondary" onClick={() => votar('contra')} className="flex-1">
-                Votar contra
-              </Button>
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {voto ? (
+              <motion.div
+                key="confirmacao"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                className="rounded-[var(--radius-field)] bg-status-verde-50 p-3 text-sm text-status-verde-700"
+              >
+                Voto registrado: <b>{voto === 'favor' ? 'a favor' : 'contra'}</b>.
+                <br />
+                Comprovante: <code className="text-xs">{comprovante}</code>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="botoes"
+                exit={{ opacity: 0, scale: 0.96 }}
+                className="flex gap-3"
+              >
+                <Button onClick={() => votar('favor')} className="flex-1">
+                  Votar a favor
+                </Button>
+                <Button variant="secondary" onClick={() => votar('contra')} className="flex-1">
+                  Votar contra
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Card>
       )}
     </div>

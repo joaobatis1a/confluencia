@@ -1,8 +1,11 @@
 import { Link, useParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { MOCK_POSTS } from '../mock'
 import MapView from '../../../components/MapView'
 import { Card } from '../../../components/ui'
-import { CATEGORIAS } from '../../../types/database'
+import CategoryBadge from '../../../components/CategoryBadge'
+import RepercussaoBar from '../../../components/RepercussaoBar'
+import { formatRelativo } from '../../../lib/repercussao'
 
 // Tarefa 4.1 do João (Semana 4): camada de simulação visual — versão ilustrativa,
 // ainda estática por enquanto (igual combinado no Escopo Geral: não é preditivo).
@@ -21,18 +24,18 @@ export default function PostDetailPage() {
     )
   }
 
-  const categoriaLabel = CATEGORIAS.find((c) => c.value === post.categoria)?.label ?? post.categoria
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <Link to="/feed" className="text-sm text-grafite-500 hover:underline">
         ← Voltar ao Feed
       </Link>
+
       <Card className="mt-4">
-        <span className="text-xs font-semibold uppercase tracking-wide text-amarelo-700">
-          {categoriaLabel}
-        </span>
-        <h1 className="font-heading text-xl font-bold text-grafite-900 mt-1 mb-3">{post.bairro}</h1>
+        <div className="flex items-center justify-between mb-2">
+          <CategoryBadge categoria={post.categoria} />
+          <span className="text-xs text-grafite-500">{formatRelativo(post.created_at)}</span>
+        </div>
+        <h1 className="font-heading text-xl font-bold text-grafite-900 mb-3">{post.bairro}</h1>
         <p className="text-sm text-grafite-900 mb-4">{post.descricao}</p>
         <MapView
           markers={[{ id: post.id, position: [post.latitude, post.longitude] }]}
@@ -40,11 +43,11 @@ export default function PostDetailPage() {
           zoom={15}
           height={240}
         />
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-grafite-200 text-xs text-grafite-500">
-          <span>{new Date(post.created_at).toLocaleDateString('pt-BR')}</span>
-          <span className="font-semibold text-grafite-700">Repercussão: {post.repercussao}</span>
-        </div>
       </Card>
+
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <RepercussaoBar valor={post.repercussao} variant="full" className="mt-4" />
+      </motion.div>
 
       <Card className="mt-4">
         <h2 className="font-heading text-sm font-bold text-grafite-900 mb-2">
@@ -55,12 +58,22 @@ export default function PostDetailPage() {
           um cálculo preditivo real (fora do escopo do MVP, ver Escopo Geral).
         </p>
         <div className="grid grid-cols-2 gap-3 text-center text-xs font-semibold text-grafite-700">
-          <div className="rounded-[var(--radius-field)] bg-grafite-200 h-24 flex items-center justify-center">
+          <motion.div
+            className="rounded-[var(--radius-field)] bg-grafite-200 h-24 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15 }}
+          >
             Situação atual
-          </div>
-          <div className="rounded-[var(--radius-field)] bg-status-verde-50 h-24 flex items-center justify-center text-status-verde-700">
+          </motion.div>
+          <motion.div
+            className="rounded-[var(--radius-field)] bg-status-verde-50 h-24 flex items-center justify-center text-status-verde-700"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
             Situação prevista
-          </div>
+          </motion.div>
         </div>
       </Card>
     </div>

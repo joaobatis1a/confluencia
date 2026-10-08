@@ -1,19 +1,30 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 
 type ButtonVariant = 'primary' | 'secondary'
 
 export function Button({
   variant = 'primary',
   className = '',
+  disabled,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
+}: HTMLMotionProps<'button'> & { variant?: ButtonVariant }) {
   const base =
     'inline-flex items-center justify-center rounded-[var(--radius-field)] px-5 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
   const variants: Record<ButtonVariant, string> = {
     primary: 'bg-amarelo-500 text-grafite-900 hover:bg-amarelo-300',
     secondary: 'border border-grafite-300 text-grafite-900 hover:bg-grafite-100',
   }
-  return <button className={`${base} ${variants[variant]} ${className}`} {...props} />
+  return (
+    <motion.button
+      whileHover={disabled ? undefined : { scale: 1.02 }}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      disabled={disabled}
+      className={`${base} ${variants[variant]} ${className}`}
+      {...props}
+    />
+  )
 }
 
 export function TextField({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
