@@ -6,10 +6,12 @@
 // system: "amarelo não é status de pendência").
 export type RepercussaoNivel = 'baixa' | 'media' | 'alta'
 
-const LIMIAR_MEDIA = 10
-const LIMIAR_ALTA = 25
+// Calibrado com a view posts_repercussao (recorrência em 30 dias + apoios):
+// com o volume real, 3 já indica problema que se repete ou foi apoiado na área.
+const LIMIAR_MEDIA = 3
+const LIMIAR_ALTA = 6
 // Teto usado só para desenhar a barra (% preenchido) — não é um valor real do produto.
-const TETO_BARRA = 40
+const TETO_BARRA = 10
 
 export function nivelRepercussao(valor: number): RepercussaoNivel {
   if (valor >= LIMIAR_ALTA) return 'alta'
