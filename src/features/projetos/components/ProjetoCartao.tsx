@@ -4,11 +4,11 @@ import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } fro
 import { CATEGORIAS, STATUS_LABELS, type Projeto } from '../../../types/database'
 import IconeCategoria from '../../feed/components/IconeCategoria'
 import { CATEGORIA_RGB } from '../../feed/cores'
-import { ETAPAS_PUBLICAS, diasRestantes, indiceEtapa, marcosCumpridos, proximoMarco } from '../etapas'
+import { ETAPAS_PUBLICAS, dataLocal, diasRestantes, indiceEtapa, marcosCumpridos, proximoMarco } from '../etapas'
 import { FOTOS_PROJETO } from '../fotos'
 
 const INCLINACAO = 6
-const fmt = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+const fmt = (iso: string) => dataLocal(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 
 // Card de projeto: a capa é uma "planta" (grade de projeto arquitetônico) na
 // cor da categoria; embaixo, onde o projeto está no trilho e o andamento da obra.

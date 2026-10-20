@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import FeedPage from './features/feed/pages/FeedPage'
@@ -53,9 +54,23 @@ function AnimatedRoutes() {
   )
 }
 
+// Ao trocar de página, volta ao topo (o navegador mantinha a rolagem da tela anterior).
+// A restauração automática do navegador também sai: ela reaplicava a rolagem
+// antiga depois que a página carregava.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+
+function VoltarAoTopo() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [pathname])
+  return null
+}
+
 function App() {
   return (
     <div className="min-h-screen bg-grafite-50">
+      <VoltarAoTopo />
       <NavBar />
       <AnimatedRoutes />
     </div>

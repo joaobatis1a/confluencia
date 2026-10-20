@@ -1,218 +1,293 @@
-import { useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import gsap from 'gsap'
+import { SplitText } from 'gsap/SplitText'
+import { useGSAP } from '@gsap/react'
 import { MOCK_PROJETOS } from '../mock'
-import { supabase } from '../../../lib/supabase'
-import { useAuth } from '../../../context/AuthContext'
-import { gerarHashComprovante } from '../../../lib/votoHash'
-import { Button, Card } from '../../../components/ui'
-import CategoryBadge from '../../../components/CategoryBadge'
-import StatusDestaque from '../components/StatusDestaque'
-import VotoBar from '../components/VotoBar'
-import type { VotosResultado } from '../../../types/database'
+import Marquee from '../../../components/Marquee'
+import Topografia from '../../../components/Topografia'
+import TextoRevelado from '../../../components/TextoRevelado'
+import Contador from '../../../components/Contador'
+import IconeCategoria from '../../feed/components/IconeCategoria'
+import { CATEGORIA_RGB } from '../../feed/cores'
+import Cedula from '../components/Cedula'
+import LinhaDoTempo from '../components/LinhaDoTempo'
+import { FOTOS_PROJETO } from '../fotos'
+import { ETAPAS_PUBLICAS, dataLocal, diasRestantes, indiceEtapa, marcosCumpridos, proximoMarco } from '../etapas'
+import { CATEGORIAS, STATUS_LABELS, type Projeto } from '../../../types/database'
 
-// Tarefa 3.1 da Ana (Semana 3): tela completa com timeline.
-// Tarefa 3.1 do João ("apoio nas telas de votação"): registro real do voto —
-// insere em `votos` com hash gerado no cliente (ver src/lib/votoHash.ts) e lê
-// o resultado agregado de `votos_resultado`. O bloqueio de voto duplicado é
-// garantido pelo UNIQUE(projeto_id, user_id) do banco (0003_projetos_votos.sql):
-// uma segunda tentativa retorna violação de unicidade, tratada abaixo como
-// "você já votou". O projeto em si (`MOCK_PROJETOS`) ainda é mock — conectar
-// `projetos` ao Supabase real é a Tarefa 3.1 da Ana (branch
-// feature/projetos-dados-reais); a votação já funciona de verdade com
-// qualquer projeto que exista na tabela.
+gsap.registerPlugin(useGSAP, SplitText)
+
+const DIA_MS = 86_400_000
+
+// Tarefa 3.1 da Ana: tela completa do projeto (timeline + status + votação).
+// --- PRÓXIMO PASSO (Ana, pendente de Supabase real) ---
+// Troque a busca no MOCK_PROJETOS por:
+//   const { data } = await supabase.from('projetos').select('*').eq('id', id).maybeSingle()
+const buscarProjeto = (id: string | undefined) => MOCK_PROJETOS.find((p) => p.id === id)
+
 export default function ProjetoDetailPage() {
   const { id } = useParams()
-  const { user } = useAuth()
-  const projeto = MOCK_PROJETOS.find((p) => p.id === id)
-  const [voto, setVoto] = useState<'favor' | 'contra' | null>(null)
-  const [comprovante, setComprovante] = useState<string | null>(null)
-  const [jaVotou, setJaVotou] = useState(false)
-  const [votando, setVotando] = useState(false)
-  const [erroVoto, setErroVoto] = useState<string | null>(null)
-  const [resultado, setResultado] = useState<VotosResultado | null>(null)
+  const projeto = buscarProjeto(id)
 
-  const projetoId = projeto?.id
-
-  useEffect(() => {
-    if (!projetoId) return
-    let cancelled = false
-    supabase
-      .from('votos_resultado')
-      .select('*')
-      .eq('projeto_id', projetoId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled) {
-          setResultado(data ?? { projeto_id: projetoId, votos_favor: 0, votos_contra: 0, total_votos: 0 })
-        }
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [projetoId])
-
-  if (!projeto || !projetoId) {
+  if (!projeto) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <p className="text-sm text-grafite-500">Projeto não encontrado.</p>
-        <Link to="/projetos" className="text-amarelo-700 font-semibold text-sm hover:underline">
-          Voltar aos Projetos
+      <div className="mx-auto max-w-3xl px-5 py-20 text-center">
+        <p className="font-heading text-3xl font-extrabold text-grafite-900">Projeto não encontrado</p>
+        <p className="mt-2 text-grafite-500">Ele pode ter sido removido ou ainda não estar visível ao público.</p>
+        <Link
+          to="/projetos"
+          className="mt-6 inline-flex rounded-full bg-amarelo-500 px-5 py-2.5 text-sm font-bold text-grafite-900"
+        >
+          Ver todos os projetos
         </Link>
       </div>
     )
   }
 
-  async function votar(opcao: 'favor' | 'contra') {
-    if (!user) {
-      setErroVoto('Entre com sua conta para votar.')
-      return
-    }
-    setVotando(true)
-    setErroVoto(null)
-    const hash = await gerarHashComprovante(projetoId!, user.id)
-    const { error } = await supabase.from('votos').insert({
-      projeto_id: projetoId,
-      user_id: user.id,
-      opcao,
-      hash_comprovante: hash,
-    })
-    setVotando(false)
+  return <ProjetoDetalhe projeto={projeto} />
+}
 
-    if (error) {
-      // 23505 = unique_violation (UNIQUE(projeto_id, user_id) da 0003_projetos_votos.sql)
-      if (error.code === '23505') {
-        setJaVotou(true)
-      } else {
-        setErroVoto(`Não foi possível registrar o voto: ${error.message}`)
-      }
-      return
-    }
+function ProjetoDetalhe({ projeto }: { projeto: Projeto }) {
+  const [agora] = useState(() => Date.now())
+  const foto = FOTOS_PROJETO[projeto.id]
+  const [r, g, b] = CATEGORIA_RGB[projeto.categoria]
+  const categoria = CATEGORIAS.find((c) => c.value === projeto.categoria)?.label ?? projeto.categoria
+  const etapa = indiceEtapa(projeto.status)
+  const dias = diasRestantes(projeto, agora)
+  const proximo = proximoMarco(projeto)
+  const diasProximo = proximo
+    ? Math.max(0, Math.ceil((dataLocal(proximo.data_prevista).getTime() - agora) / DIA_MS))
+    : null
+  const emConsulta = projeto.status === 'em_consulta'
 
-    setVoto(opcao)
-    setComprovante(hash.slice(0, 16))
-    setResultado((prev) => ({
-      projeto_id: projetoId!,
-      votos_favor: (prev?.votos_favor ?? 0) + (opcao === 'favor' ? 1 : 0),
-      votos_contra: (prev?.votos_contra ?? 0) + (opcao === 'contra' ? 1 : 0),
-      total_votos: (prev?.total_votos ?? 0) + 1,
-    }))
-  }
+  // --- Hero com profundidade: a foto desce mais devagar que a página.
+  const hero = useRef<HTMLElement>(null)
+  const { scrollYProgress } = useScroll({ target: hero, offset: ['start start', 'end start'] })
+  const fotoY = useTransform(scrollYProgress, [0, 1], ['0%', '22%'])
+  const fotoEscala = useTransform(scrollYProgress, [0, 1], [1.12, 1])
+  const tituloY = useTransform(scrollYProgress, [0, 1], [0, -90])
+  const escurecer = useTransform(scrollYProgress, [0, 1], [0.25, 0.7])
+
+  useGSAP(
+    () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      const titulo = SplitText.create('[data-titulo-projeto]', { type: 'lines', mask: 'lines' })
+      gsap
+        .timeline({ defaults: { ease: 'power4.out' } })
+        .from(titulo.lines, { yPercent: 105, duration: 1, stagger: 0.12, delay: 0.15 })
+        .from('[data-hero-chip]', { y: 16, opacity: 0, stagger: 0.08, duration: 0.6 }, '-=0.7')
+      return () => titulo.revert()
+    },
+    { scope: hero },
+  )
+
+  const faixa = emConsulta
+    ? [
+        'Consulta pública aberta',
+        dias === 0 ? 'Último dia para votar' : `Faltam ${dias} dias`,
+        'Seu voto conta',
+        'Voto secreto e auditável',
+      ]
+    : [
+        STATUS_LABELS[projeto.status],
+        proximo ? `Próxima etapa: ${proximo.nome}` : 'Obra entregue',
+        `${marcosCumpridos(projeto)} de ${projeto.timeline.length} marcos concluídos`,
+        categoria,
+      ]
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <Link to="/projetos" className="text-sm text-grafite-500 hover:underline">
-        ← Voltar aos Projetos
-      </Link>
+    <div>
+      {/* HERO ------------------------------------------------------------ */}
+      <section ref={hero} className="relative h-[78vh] min-h-[520px] overflow-hidden text-white">
+        <motion.div className="absolute inset-0" style={{ y: fotoY, scale: fotoEscala }}>
+          {foto ? (
+            <img src={foto.url} alt={`Foto do local: ${foto.local}`} className="h-full w-full object-cover" />
+          ) : (
+            <div
+              className="h-full w-full"
+              style={{ background: `linear-gradient(135deg, rgb(${r},${g},${b}), rgba(${r},${g},${b},0.7))` }}
+            />
+          )}
+        </motion.div>
+        <motion.div className="absolute inset-0 bg-grafite-900" style={{ opacity: escurecer }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-grafite-900/90 via-grafite-900/20 to-transparent" />
+        <Topografia semente={projeto.id.length * 3.1} className="absolute inset-0 h-full w-full text-white/15" />
 
-      <div className="mt-4">
-        <StatusDestaque projeto={projeto} />
-      </div>
-
-      <Card className="mt-4">
-        <CategoryBadge categoria={projeto.categoria} />
-        <h1 className="font-heading text-xl font-bold text-grafite-900 mt-2 mb-2">{projeto.nome}</h1>
-        <p className="text-sm text-grafite-700">{projeto.descricao}</p>
-        {projeto.origem_post_id && (
+        <motion.div
+          style={{ y: tituloY }}
+          className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-5 sm:px-8 pb-12"
+        >
           <Link
-            to={`/feed/${projeto.origem_post_id}`}
-            className="inline-block mt-3 text-sm font-semibold text-amarelo-700 hover:underline"
+            to="/projetos"
+            data-hero-chip
+            className="mb-auto mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur transition-colors hover:bg-white/25"
           >
-            Originado de um relato do Feed →
+            ← Projetos
           </Link>
-        )}
-      </Card>
 
-      <Card className="mt-4">
-        <h2 className="font-heading text-sm font-bold text-grafite-900 mb-3">Linha do tempo</h2>
-        {projeto.timeline.length === 0 && (
-          // timeline pode vir vazia (contrato de dados) — projeto recém-criado sem marcos
-          <p className="text-sm text-grafite-500">Nenhum marco cadastrado ainda.</p>
-        )}
-        <ol className="space-y-3">
-          {projeto.timeline.map((marco, i) => (
-            <motion.li
-              key={i}
-              className="flex items-center gap-3 text-sm"
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.08 }}
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              data-hero-chip
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em]"
+              style={{ background: `rgb(${r},${g},${b})` }}
             >
-              <motion.span
-                className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${
-                  marco.data_real ? 'bg-status-verde-500' : 'bg-grafite-300'
-                }`}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: i * 0.08 + 0.1, type: 'spring', stiffness: 400 }}
-              />
-              <div className="flex-1">
-                <span className="font-medium text-grafite-900">{marco.nome}</span>
-                <span className="text-grafite-500 ml-2">
-                  previsto {new Date(marco.data_prevista).toLocaleDateString('pt-BR')}
-                  {marco.data_real &&
-                    ` · concluído ${new Date(marco.data_real).toLocaleDateString('pt-BR')}`}
-                </span>
-              </div>
-            </motion.li>
-          ))}
-        </ol>
-      </Card>
+              <IconeCategoria categoria={projeto.categoria} size={14} />
+              {categoria}
+            </span>
+            <span
+              data-hero-chip
+              className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em] ${
+                emConsulta ? 'bg-amarelo-500 text-grafite-900' : projeto.status === 'rejeitado' ? 'bg-status-vermelho-500' : 'bg-white text-grafite-900'
+              }`}
+            >
+              {STATUS_LABELS[projeto.status]}
+            </span>
+          </div>
 
-      {projeto.status === 'em_consulta' && (
-        <Card className="mt-4 overflow-hidden">
-          <h2 className="font-heading text-sm font-bold text-grafite-900 mb-1">Consulta pública</h2>
-          <p className="text-xs text-grafite-500 mb-4">
-            Seu voto é secreto (nunca vinculado ao seu nome publicamente) e consultivo — não obriga a
-            decisão final do governo, mas gera um registro oficial de opinião.
-          </p>
+          <h1
+            data-titulo-projeto
+            className="mt-5 max-w-5xl font-heading text-5xl sm:text-7xl lg:text-8xl font-extrabold leading-[0.92] tracking-tight"
+          >
+            {projeto.nome}
+          </h1>
 
-          {resultado && <VotoBar favor={resultado.votos_favor} contra={resultado.votos_contra} className="mb-4" />}
+          {foto && (
+            <p data-hero-chip className="mt-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
+              {foto.local} ·{' '}
+              <a href={foto.fonte} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
+                Foto: {foto.autor}, {foto.licenca}
+              </a>
+            </p>
+          )}
+        </motion.div>
+      </section>
 
-          <AnimatePresence mode="wait">
-            {voto ? (
-              <motion.div
-                key="confirmacao"
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                className="rounded-[var(--radius-field)] bg-status-verde-50 p-3 text-sm text-status-verde-700"
-              >
-                Voto registrado: <b>{voto === 'favor' ? 'a favor' : 'contra'}</b>.
-                <br />
-                Comprovante: <code className="text-xs">{comprovante}</code>
-              </motion.div>
-            ) : jaVotou ? (
-              <motion.div
-                key="ja-votou"
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="rounded-[var(--radius-field)] bg-grafite-100 p-3 text-sm text-grafite-700"
-              >
-                Você já registrou seu voto neste projeto anteriormente. Como o voto é secreto, não é
-                possível mostrar de novo qual opção você escolheu.
-              </motion.div>
-            ) : (
-              <motion.div key="botoes" exit={{ opacity: 0, scale: 0.96 }}>
-                <div className="flex gap-3">
-                  <Button onClick={() => votar('favor')} disabled={votando} className="flex-1">
-                    {votando ? 'Registrando...' : 'Votar a favor'}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => votar('contra')}
-                    disabled={votando}
-                    className="flex-1"
+      {/* FAIXA ----------------------------------------------------------- */}
+      <Marquee
+        itens={faixa}
+        className={`py-4 font-heading text-xl sm:text-2xl font-extrabold uppercase tracking-tight ${
+          emConsulta ? 'bg-amarelo-500 text-grafite-900' : 'bg-amarelo-100 text-amarelo-900'
+        }`}
+      />
+
+      {/* CONTEÚDO -------------------------------------------------------- */}
+      <div className="mx-auto grid max-w-7xl gap-16 px-5 sm:px-8 py-16 lg:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">O projeto</p>
+          <TextoRevelado className="mt-4 font-heading text-3xl sm:text-4xl font-bold leading-[1.15] text-grafite-900">
+            {projeto.descricao}
+          </TextoRevelado>
+
+          <dl className="mt-14 grid grid-cols-3 gap-4 border-y border-grafite-200 py-8">
+            <div>
+              <dd className="font-heading text-5xl font-extrabold text-grafite-900">
+                <Contador valor={marcosCumpridos(projeto)} />
+                <span className="text-grafite-300">/{projeto.timeline.length}</span>
+              </dd>
+              <dt className="mt-1 text-sm text-grafite-500">marcos da obra concluídos</dt>
+            </div>
+            <div>
+              <dd className="font-heading text-5xl font-extrabold text-grafite-900">
+                <Contador valor={etapa + 1} />
+                <span className="text-grafite-300">/{ETAPAS_PUBLICAS.length}</span>
+              </dd>
+              <dt className="mt-1 text-sm text-grafite-500">etapa do projeto</dt>
+            </div>
+            <div>
+              <dd className="font-heading text-5xl font-extrabold text-amarelo-700">
+                <Contador valor={emConsulta ? (dias ?? 0) : proximo ? (diasProximo ?? 0) : 100} />
+                {!emConsulta && !proximo && <span>%</span>}
+              </dd>
+              <dt className="mt-1 text-sm text-grafite-500">
+                {emConsulta ? 'dias para votar' : proximo ? 'dias até a próxima etapa' : 'da obra entregue'}
+              </dt>
+            </div>
+          </dl>
+
+          <section className="mt-14">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">Onde está</p>
+            <ol className="mt-5 grid grid-cols-5 gap-2">
+              {ETAPAS_PUBLICAS.map((e, i) => {
+                const feita = i < etapa || projeto.status === 'concluido'
+                const atual = i === etapa && projeto.status !== 'concluido'
+                return (
+                  <motion.li
+                    key={e.status}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08 }}
+                    className={`rounded-2xl px-3 py-4 text-center ${
+                      atual
+                        ? 'bg-amarelo-500 text-grafite-900 shadow-[0_12px_24px_-12px_rgba(245,184,0,0.9)]'
+                        : feita
+                          ? 'bg-status-verde-50 text-status-verde-700'
+                          : 'bg-grafite-100 text-grafite-500'
+                    }`}
                   >
-                    {votando ? 'Registrando...' : 'Votar contra'}
-                  </Button>
-                </div>
-                {erroVoto && <p className="text-xs text-status-vermelho-500 mt-2">{erroVoto}</p>}
-              </motion.div>
+                    <span className="block font-heading text-2xl font-extrabold">{i + 1}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.08em]">{e.label}</span>
+                  </motion.li>
+                )
+              })}
+            </ol>
+            {projeto.status === 'rejeitado' && (
+              <p className="mt-3 rounded-2xl bg-status-vermelho-50 px-4 py-3 text-sm font-semibold text-status-vermelho-700">
+                Este projeto foi rejeitado na consulta pública e não aparece para a população.
+              </p>
             )}
-          </AnimatePresence>
-        </Card>
-      )}
+          </section>
+
+          <section className="mt-16">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">Linha do tempo da obra</p>
+            <div className="mt-8">
+              <LinhaDoTempo marcos={projeto.timeline} />
+            </div>
+          </section>
+
+          {projeto.origem_post_id && (
+            <Link
+              to={`/feed/${projeto.origem_post_id}`}
+              className="group mt-16 flex items-center justify-between gap-6 overflow-hidden rounded-[28px] bg-grafite-100 p-6 transition-colors hover:bg-amarelo-50"
+            >
+              <span>
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">De onde veio</span>
+                <span className="mt-1 block font-heading text-2xl font-extrabold text-grafite-900">
+                  Este projeto nasceu de um relato da população
+                </span>
+                <span className="mt-1 block text-sm text-grafite-700">Veja o problema que deu origem a ele no Feed.</span>
+              </span>
+              <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-amarelo-500 text-2xl text-grafite-900 transition-transform group-hover:translate-x-1 group-hover:-rotate-12">
+                →
+              </span>
+            </Link>
+          )}
+        </div>
+
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          {emConsulta ? (
+            <Cedula projeto={projeto} agora={agora} />
+          ) : (
+            <div className="overflow-hidden rounded-[32px] border border-grafite-200 bg-white">
+              <div className="bg-amarelo-100 px-6 py-5">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amarelo-900">Consulta pública</p>
+                <p className="mt-1 font-heading text-2xl font-extrabold text-grafite-900">
+                  {projeto.status === 'proposto' ? 'Ainda não abriu' : 'Encerrada'}
+                </p>
+              </div>
+              <p className="p-6 text-sm text-grafite-700">
+                {projeto.status === 'proposto'
+                  ? 'Quando o órgão abrir a consulta, a votação aparece aqui.'
+                  : projeto.status === 'rejeitado'
+                    ? 'A população rejeitou o projeto na consulta.'
+                    : 'A população já votou neste projeto. Acompanhe a obra pela linha do tempo.'}
+              </p>
+            </div>
+          )}
+        </aside>
+      </div>
     </div>
   )
 }

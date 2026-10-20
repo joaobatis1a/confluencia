@@ -14,6 +14,15 @@ export const indiceEtapa = (status: ProjetoStatus) => ETAPAS_PUBLICAS.findIndex(
 
 const DIA_MS = 86_400_000
 
+/**
+ * Datas só com dia ("2026-09-01") viram meia-noite UTC no `new Date`, que no
+ * fuso de Recife ainda é o dia anterior. Lê como meio-dia local para não
+ * "voltar" um dia na tela.
+ */
+export function dataLocal(iso: string): Date {
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T12:00:00`) : new Date(iso)
+}
+
 /** Dias inteiros até o fim da consulta (0 = termina hoje), ou null se não houver prazo. */
 export function diasRestantes(projeto: Projeto, agora: number): number | null {
   if (!projeto.consulta_fim) return null
