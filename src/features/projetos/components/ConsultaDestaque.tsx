@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { CATEGORIAS, type Projeto, type VotosResultado } from '../../../types/database'
 import IconeCategoria from '../../feed/components/IconeCategoria'
 import { diasRestantes } from '../etapas'
+import { FOTOS_PROJETO } from '../fotos'
 
 interface ConsultaDestaqueProps {
   projeto: Projeto
@@ -15,6 +16,7 @@ interface ConsultaDestaqueProps {
 // Card amarelo com a contagem regressiva do prazo em destaque.
 export default function ConsultaDestaque({ projeto, resultado, agora, indice }: ConsultaDestaqueProps) {
   const dias = diasRestantes(projeto, agora)
+  const foto = FOTOS_PROJETO[projeto.id]
   const categoria = CATEGORIAS.find((c) => c.value === projeto.categoria)?.label ?? projeto.categoria
   const total = resultado?.total_votos ?? 0
   const pctFavor = total ? Math.round(((resultado?.votos_favor ?? 0) / total) * 100) : 0
@@ -35,7 +37,11 @@ export default function ConsultaDestaque({ projeto, resultado, agora, indice }: 
         transition={{ duration: 4, ease: 'linear', repeat: Infinity }}
       />
 
-      <div className="relative grid gap-6 p-6 sm:p-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+      <div
+        className={`relative grid gap-6 p-6 sm:p-8 md:items-end ${
+          foto ? 'md:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_240px_auto]' : 'md:grid-cols-[minmax(0,1fr)_auto]'
+        }`}
+      >
         <div className="min-w-0">
           <span className="inline-flex items-center gap-2 rounded-full bg-grafite-900 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-amarelo-300">
             <span className="relative flex h-2 w-2">
@@ -68,6 +74,26 @@ export default function ConsultaDestaque({ projeto, resultado, agora, indice }: 
             </div>
           </div>
         </div>
+
+        {foto && (
+          <motion.figure
+            className="hidden lg:block self-center"
+            initial={{ opacity: 0, rotate: 6, y: 20 }}
+            animate={{ opacity: 1, rotate: -4, y: 0 }}
+            whileHover={{ rotate: 0, scale: 1.04 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 16, delay: 0.25 }}
+          >
+            <div className="overflow-hidden rounded-xl bg-white p-2 shadow-[0_20px_40px_-18px_rgba(27,24,19,0.6)]">
+              <img src={foto.url} alt={`Foto do local: ${foto.local}`} className="h-44 w-full rounded-lg object-cover" />
+            </div>
+            <figcaption className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-amarelo-900">
+              {foto.local}
+              <span className="block font-medium normal-case tracking-normal opacity-70">
+                Foto: {foto.autor} · {foto.licenca}
+              </span>
+            </figcaption>
+          </motion.figure>
+        )}
 
         <div className="flex items-end gap-5 md:flex-col md:items-end">
           {dias !== null && (

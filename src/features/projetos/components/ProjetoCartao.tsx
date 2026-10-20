@@ -5,6 +5,7 @@ import { CATEGORIAS, STATUS_LABELS, type Projeto } from '../../../types/database
 import IconeCategoria from '../../feed/components/IconeCategoria'
 import { CATEGORIA_RGB } from '../../feed/cores'
 import { ETAPAS_PUBLICAS, diasRestantes, indiceEtapa, marcosCumpridos, proximoMarco } from '../etapas'
+import { FOTOS_PROJETO } from '../fotos'
 
 const INCLINACAO = 6
 const fmt = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
@@ -19,6 +20,7 @@ export default function ProjetoCartao({ projeto, agora, indice }: { projeto: Pro
   const feitos = marcosCumpridos(projeto)
   const proximo = proximoMarco(projeto)
   const dias = diasRestantes(projeto, agora)
+  const foto = FOTOS_PROJETO[projeto.id]
 
   const mx = useMotionValue(0.5)
   const my = useMotionValue(0.5)
@@ -55,27 +57,46 @@ export default function ProjetoCartao({ projeto, agora, indice }: { projeto: Pro
       >
         <Link to={`/projetos/${projeto.id}`} className="flex h-full flex-col">
           <div
-            className="relative h-40 overflow-hidden"
+            className="relative h-48 overflow-hidden"
             style={{ background: `linear-gradient(135deg, rgb(${r},${g},${b}), rgba(${r},${g},${b},0.78))` }}
           >
+            {foto && (
+              <>
+                {/* Foto do local: entra dessaturada e tingida, ganha cor e zoom no hover. */}
+                <img
+                  src={foto.url}
+                  alt={`Foto do local: ${foto.local}`}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full scale-105 object-cover grayscale-[0.85] transition-[filter,transform] duration-700 ease-out group-hover:scale-110 group-hover:grayscale-0"
+                />
+                <span
+                  aria-hidden
+                  className="absolute inset-0 mix-blend-multiply transition-opacity duration-700 group-hover:opacity-0"
+                  style={{ background: `rgba(${r},${g},${b},0.55)` }}
+                />
+                <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
+              </>
+            )}
             {/* Grade de planta + traços de projeto */}
             <span
               aria-hidden
-              className="absolute inset-0 opacity-30"
+              className={`absolute inset-0 transition-opacity duration-500 ${foto ? 'opacity-20 group-hover:opacity-0' : 'opacity-30'}`}
               style={{
                 backgroundImage:
                   'linear-gradient(rgba(255,255,255,.55) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.55) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.25) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.25) 1px, transparent 1px)',
                 backgroundSize: '48px 48px, 48px 48px, 12px 12px, 12px 12px',
               }}
             />
-            <motion.span
-              aria-hidden
-              className="absolute -right-6 -bottom-8 text-white/25"
-              animate={{ rotate: [0, -6, 0] }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <IconeCategoria categoria={projeto.categoria} size={150} />
-            </motion.span>
+            {!foto && (
+              <motion.span
+                aria-hidden
+                className="absolute -right-6 -bottom-8 text-white/25"
+                animate={{ rotate: [0, -6, 0] }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <IconeCategoria categoria={projeto.categoria} size={150} />
+              </motion.span>
+            )}
             <motion.span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: brilho }} />
 
             <div className="relative flex h-full flex-col justify-between p-5 text-white">
@@ -83,12 +104,22 @@ export default function ProjetoCartao({ projeto, agora, indice }: { projeto: Pro
                 <IconeCategoria categoria={projeto.categoria} size={14} />
                 {categoria}
               </span>
-              <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-bold text-grafite-900 shadow-sm">
-                {STATUS_LABELS[projeto.status]}
-                {projeto.status === 'em_consulta' && dias !== null && (
-                  <span className="text-amarelo-700"> · {dias}d</span>
+              <div className="flex items-end justify-between gap-3">
+                <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-bold text-grafite-900 shadow-sm">
+                  {STATUS_LABELS[projeto.status]}
+                  {projeto.status === 'em_consulta' && dias !== null && (
+                    <span className="text-amarelo-700"> · {dias}d</span>
+                  )}
+                </span>
+                {foto && (
+                  <span className="text-right text-[10px] font-bold uppercase leading-tight tracking-[0.12em] text-white/90">
+                    {foto.local}
+                    <span className="block font-medium normal-case tracking-normal text-white/60 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+                      Foto: {foto.autor} · {foto.licenca}
+                    </span>
+                  </span>
                 )}
-              </span>
+              </div>
             </div>
           </div>
 
