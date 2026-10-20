@@ -40,13 +40,63 @@ export interface Post {
 
 // View `posts_repercussao` (use para LER o Feed). Somente leitura.
 // repercussao = recorrencia + interacoes, calculado sob demanda.
-export interface PostRepercussao extends Omit<Post, 'repercussao'> {
+export interface PostRepercussao extends Omit<Post, 'repercussao' | 'user_id'> {
+  /** Autor. `null` quando o relato é anônimo (só o próprio autor recebe o id). Ver 0006. */
+  user_id: string | null
+  /** Relato publicado sem autor visível (sempre true em "seguranca"). Ver 0006. */
+  anonimo?: boolean
   /** outros posts da mesma categoria + bairro nos últimos 30 dias */
   recorrencia: number
   /** quantidade de apoios do post em post_apoios */
   interacoes: number
   /** recorrencia + interacoes */
   repercussao: number
+  /** quantidade de comentários (0006) */
+  comentarios?: number
+  /** status da resposta oficial mais recente do órgão, se houver (0006) */
+  status_oficial?: StatusResposta | null
+}
+
+// --- Camada social (0006_rede_social.sql) ---------------------------------
+
+export type StatusResposta = 'recebido' | 'em_analise' | 'virou_projeto' | 'resolvido' | 'nao_procede'
+
+export const STATUS_RESPOSTA_LABELS: Record<StatusResposta, string> = {
+  recebido: 'Recebido pelo órgão',
+  em_analise: 'Em análise',
+  virou_projeto: 'Virou projeto',
+  resolvido: 'Resolvido',
+  nao_procede: 'Não procede',
+}
+
+export interface Comentario {
+  id: string
+  post_id: string
+  user_id: string
+  texto: string
+  created_at: string
+}
+
+export interface RespostaOficial {
+  id: string
+  post_id: string
+  orgao_id: string
+  status: StatusResposta
+  texto: string
+  projeto_id: string | null
+  created_at: string
+}
+
+/** Campos do perfil que aparecem para todo mundo. */
+export interface PerfilPublico {
+  id: string
+  nome: string
+  apelido: string | null
+  bairro: string | null
+  bio: string | null
+  institucional_verificado: boolean
+  orgao_nome: string | null
+  created_at?: string
 }
 
 // Tabela `post_apoios`: um apoio por usuário por post (PK composta).
@@ -117,4 +167,8 @@ export interface Profile {
   nome: string
   institucional_verificado: boolean
   orgao_nome: string | null
+  /** Perfil público (0006) — opcionais até a migration ser aplicada. */
+  apelido?: string | null
+  bairro?: string | null
+  bio?: string | null
 }
