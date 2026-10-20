@@ -6,6 +6,8 @@ import IconeCategoria from '../../feed/components/IconeCategoria'
 import { CATEGORIA_RGB } from '../../feed/cores'
 import { ETAPAS_PUBLICAS, dataLocal, diasRestantes, indiceEtapa, marcosCumpridos, proximoMarco } from '../etapas'
 import { FOTOS_PROJETO } from '../fotos'
+import { CONTEUDO_PROJETO, reaisCurto } from '../conteudo'
+import BotaoSalvar from './BotaoSalvar'
 
 const INCLINACAO = 6
 const fmt = (iso: string) => dataLocal(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
@@ -21,6 +23,7 @@ export default function ProjetoCartao({ projeto, agora, indice }: { projeto: Pro
   const proximo = proximoMarco(projeto)
   const dias = diasRestantes(projeto, agora)
   const foto = FOTOS_PROJETO[projeto.id]
+  const conteudo = CONTEUDO_PROJETO[projeto.id]
 
   const mx = useMotionValue(0.5)
   const my = useMotionValue(0.5)
@@ -53,7 +56,7 @@ export default function ProjetoCartao({ projeto, agora, indice }: { projeto: Pro
           my.set(0.5)
         }}
         style={reduzir ? undefined : { rotateX, rotateY }}
-        className="group h-full overflow-hidden rounded-[28px] border border-grafite-200 bg-white shadow-[0_2px_8px_-4px_rgba(27,24,19,0.12)] transition-shadow duration-300 hover:shadow-[0_28px_50px_-24px_rgba(27,24,19,0.4)]"
+        className="group relative h-full overflow-hidden rounded-[28px] border border-grafite-200 bg-white shadow-[0_2px_8px_-4px_rgba(27,24,19,0.12)] transition-shadow duration-300 hover:shadow-[0_28px_50px_-24px_rgba(27,24,19,0.4)]"
       >
         <Link to={`/projetos/${projeto.id}`} className="flex h-full flex-col">
           <div
@@ -127,6 +130,16 @@ export default function ProjetoCartao({ projeto, agora, indice }: { projeto: Pro
             <h3 className="font-heading text-xl font-extrabold leading-tight text-grafite-900">{projeto.nome}</h3>
             <p className="mt-1.5 flex-1 text-sm text-grafite-700 line-clamp-2">{projeto.descricao}</p>
 
+            {conteudo?.estimativa && projeto.status !== 'concluido' && projeto.status !== 'rejeitado' && (
+              <p className="mt-4 flex items-baseline gap-2 rounded-2xl bg-amarelo-50 px-3 py-2 text-xs text-amarelo-900">
+                <span className="font-bold uppercase tracking-[0.08em]">Estimativa</span>
+                <span className="font-heading text-base font-extrabold text-grafite-900">
+                  {reaisCurto(conteudo.estimativa.custo)}
+                </span>
+                <span>· {conteudo.estimativa.prazoMeses} meses de obra</span>
+              </p>
+            )}
+
             {/* Trilho de etapas */}
             <div className="mt-5 flex items-center gap-1.5" aria-label={`Etapa: ${STATUS_LABELS[projeto.status]}`}>
               {ETAPAS_PUBLICAS.map((e, i) => (
@@ -175,16 +188,38 @@ export default function ProjetoCartao({ projeto, agora, indice }: { projeto: Pro
               </span>
             </div>
 
-            {projeto.origem_post_id && (
-              <span className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-amarelo-50 px-2.5 py-1 text-[11px] font-semibold text-amarelo-900 ring-1 ring-amarelo-300">
-                <svg viewBox="0 0 24 24" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden>
-                  <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
-                </svg>
-                Nasceu de um relato da população
-              </span>
+            {(projeto.origem_post_id || conteudo?.antesDepois || conteudo?.videos || conteudo?.galeria) && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {projeto.origem_post_id && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amarelo-50 px-2.5 py-1 text-[11px] font-semibold text-amarelo-900 ring-1 ring-amarelo-300">
+                    <svg viewBox="0 0 24 24" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden>
+                      <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
+                    </svg>
+                    Nasceu de um relato
+                  </span>
+                )}
+                {conteudo?.antesDepois && (
+                  <span className="rounded-full bg-grafite-100 px-2.5 py-1 text-[11px] font-semibold text-grafite-700">
+                    ◐ Antes e depois
+                  </span>
+                )}
+                {conteudo?.videos && (
+                  <span className="rounded-full bg-grafite-100 px-2.5 py-1 text-[11px] font-semibold text-grafite-700">
+                    ▶ Vídeos
+                  </span>
+                )}
+                {conteudo?.galeria && (
+                  <span className="rounded-full bg-grafite-100 px-2.5 py-1 text-[11px] font-semibold text-grafite-700">
+                    ▦ {conteudo.galeria.length} fotos da obra
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </Link>
+        <div className="absolute right-4 top-4 z-10">
+          <BotaoSalvar projetoId={projeto.id} />
+        </div>
       </motion.div>
     </motion.li>
   )

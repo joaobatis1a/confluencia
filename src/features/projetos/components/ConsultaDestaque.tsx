@@ -4,6 +4,7 @@ import { CATEGORIAS, type Projeto, type VotosResultado } from '../../../types/da
 import IconeCategoria from '../../feed/components/IconeCategoria'
 import { diasRestantes } from '../etapas'
 import { FOTOS_PROJETO } from '../fotos'
+import BotaoSalvar from './BotaoSalvar'
 
 interface ConsultaDestaqueProps {
   projeto: Projeto
@@ -37,6 +38,9 @@ export default function ConsultaDestaque({ projeto, resultado, agora, indice }: 
         transition={{ duration: 4, ease: 'linear', repeat: Infinity }}
       />
 
+      <div className="absolute right-5 top-5 z-10">
+        <BotaoSalvar projetoId={projeto.id} />
+      </div>
       <div
         className={`relative grid gap-6 p-6 sm:p-8 md:items-end ${
           foto ? 'md:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_240px_auto]' : 'md:grid-cols-[minmax(0,1fr)_auto]'
