@@ -13,6 +13,15 @@ import IconeCategoria from '../../feed/components/IconeCategoria'
 import { CATEGORIA_RGB } from '../../feed/cores'
 import Cedula from '../components/Cedula'
 import LinhaDoTempo from '../components/LinhaDoTempo'
+import BotaoSalvar from '../components/BotaoSalvar'
+import {
+  CartaoEstimativa,
+  ComparadorFotos,
+  GaleriaObra,
+  SecaoProposta,
+  VideosAntesDepois,
+} from '../components/SecoesProjeto'
+import { CONTEUDO_PROJETO } from '../conteudo'
 import { FOTOS_PROJETO } from '../fotos'
 import { ETAPAS_PUBLICAS, dataLocal, diasRestantes, indiceEtapa, marcosCumpridos, proximoMarco } from '../etapas'
 import { CATEGORIAS, STATUS_LABELS, type Projeto } from '../../../types/database'
@@ -61,6 +70,7 @@ function ProjetoDetalhe({ projeto }: { projeto: Projeto }) {
     ? Math.max(0, Math.ceil((dataLocal(proximo.data_prevista).getTime() - agora) / DIA_MS))
     : null
   const emConsulta = projeto.status === 'em_consulta'
+  const conteudo = CONTEUDO_PROJETO[projeto.id]
 
   // --- Hero com profundidade: a foto desce mais devagar que a página.
   const hero = useRef<HTMLElement>(null)
@@ -119,13 +129,18 @@ function ProjetoDetalhe({ projeto }: { projeto: Projeto }) {
           style={{ y: tituloY }}
           className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-5 sm:px-8 pb-12"
         >
-          <Link
-            to="/projetos"
-            data-hero-chip
-            className="mb-auto mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur transition-colors hover:bg-white/25"
-          >
-            ← Projetos
-          </Link>
+          <div className="mb-auto mt-8 flex items-center justify-between gap-3">
+            <Link
+              to="/projetos"
+              data-hero-chip
+              className="inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur transition-colors hover:bg-white/25"
+            >
+              ← Projetos
+            </Link>
+            <span data-hero-chip>
+              <BotaoSalvar projetoId={projeto.id} variante="completo" />
+            </span>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <span
@@ -206,7 +221,13 @@ function ProjetoDetalhe({ projeto }: { projeto: Projeto }) {
             </div>
           </dl>
 
-          <section className="mt-14">
+          {conteudo && <SecaoProposta conteudo={conteudo} />}
+          {conteudo?.estimativa && <CartaoEstimativa estimativa={conteudo.estimativa} projeto={projeto} />}
+          {conteudo?.antesDepois && <ComparadorFotos antes={conteudo.antesDepois.antes} depois={conteudo.antesDepois.depois} />}
+          {conteudo?.videos && <VideosAntesDepois videos={conteudo.videos} />}
+          {conteudo?.galeria && conteudo.galeria.length > 0 && <GaleriaObra fotos={conteudo.galeria} />}
+
+          <section className="mt-16">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">Onde está</p>
             <ol className="mt-5 grid grid-cols-5 gap-2">
               {ETAPAS_PUBLICAS.map((e, i) => {
