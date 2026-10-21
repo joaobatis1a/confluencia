@@ -340,7 +340,7 @@ const PASSOS = [
   {
     titulo: 'Relate',
     destaque: 'o que você vê',
-    texto: 'Poste apagado, buraco, esgoto aberto. Marque o ponto no mapa em quatro passos — com seu apelido ou anônimo.',
+    texto: 'Poste apagado, buraco, esgoto aberto. Marque o ponto no mapa em quatro passos, com seu apelido ou anônimo.',
     fundo: 'bg-amarelo-500',
     cena: <CenaRelate />,
   },
@@ -361,7 +361,7 @@ const PASSOS = [
   {
     titulo: 'Acompanhe',
     destaque: 'até a entrega',
-    texto: 'Salve projetos, receba notificações e veja cada etapa da obra — com fotos, custo previsto e o antes e depois.',
+    texto: 'Salve projetos, receba notificações e veja cada etapa da obra com fotos, custo previsto e o antes e depois.',
     fundo: 'bg-status-verde-50',
     cena: <CenaAcompanhe />,
   },

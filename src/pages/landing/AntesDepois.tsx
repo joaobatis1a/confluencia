@@ -70,7 +70,7 @@ export default function AntesDepois() {
         </h2>
         <div className="flex flex-wrap items-end justify-between gap-6">
           <p className="max-w-sm text-sm text-white/80">
-            Rua dos Judeus, 1855 — hoje Rua do Bom Jesus, no Recife Antigo. No Confluência, cada projeto mostra o antes,
+            Rua dos Judeus, 1855, hoje Rua do Bom Jesus, no Recife Antigo. No Confluência, cada projeto mostra o antes,
             as fotos da obra e o depois.
             <span className="mt-2 block text-[11px] text-white/50">
               Fotos: {par.antes.autor} ({par.antes.licenca}) · {par.depois.autor} ({par.depois.licenca}) · Wikimedia Commons

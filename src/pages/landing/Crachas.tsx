@@ -176,7 +176,7 @@ export default function Crachas() {
           Pegue um crachá e <span className="font-serif font-normal italic text-amarelo-700">entre.</span>
         </h2>
         <p className="mt-4 max-w-md text-lg text-grafite-700">
-          Três jeitos de conhecer o Confluência — sem conta, como moradora ou como o órgão que responde.
+          Três jeitos de conhecer o Confluência: sem conta, como moradora ou como o órgão que responde.
         </p>
       </div>
 

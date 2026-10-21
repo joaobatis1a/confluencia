@@ -31,11 +31,6 @@ function jaViuAbertura() {
   }
 }
 
-// Relatos de teste ("[SEED] ...", "Teste de QA ...") e textos sem frase de
-// verdade não vão para a vitrine.
-const ehVitrine = (d: string) =>
-  !d.startsWith('[') && !/teste|automa[cç][aã]o/i.test(d) && d.trim().split(/\s+/).length >= 5
-
 // Landing do Confluência: apresenta o sistema e leva para dentro dele (/feed).
 // Referência de linguagem: landonorris.com — abertura com contador, letra
 // enorme, serifa itálica, rolagem que conta uma história.
@@ -87,7 +82,6 @@ export default function LandingPage() {
     setAbertura(false)
   }
 
-  const vitrine = relatos.filter((r) => ehVitrine(r.descricao))
   const totais = {
     relatos: relatos.length,
     apoios: relatos.reduce((s, r) => s + r.interacoes, 0),
@@ -100,7 +94,7 @@ export default function LandingPage() {
       <AnimatePresence>{abertura && <Preloader onFim={fimAbertura} />}</AnimatePresence>
       <NavLanding />
 
-      <HeroPortal relatos={vitrine} pontos={relatos} carregou={carregou} totais={totais} pronto={!abertura} />
+      <HeroPortal pontos={relatos} carregou={carregou} totais={totais} pronto={!abertura} />
 
       <Manifesto />
 
@@ -374,7 +368,7 @@ function Colagem() {
           </h2>
         </div>
         <p className="max-w-xs text-grafite-700">
-          Ruas, pontes e praças do Recife — os lugares onde os relatos acontecem. Passe o mouse para parar.
+          Ruas, pontes e praças do Recife, os lugares onde os relatos acontecem. Passe o mouse para parar.
         </p>
       </div>
       <div className="mt-14 [mask-image:linear-gradient(90deg,transparent,black_6%,black_94%,transparent)]">
