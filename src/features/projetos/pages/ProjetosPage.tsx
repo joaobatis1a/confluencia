@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import gsap from 'gsap'
@@ -40,7 +41,9 @@ export default function ProjetosPage() {
   }, [publicos])
 
   const { salvos } = useProjetosSalvos()
-  const [soSalvos, setSoSalvos] = useState(false)
+  // "Acompanhando" do menu do usuário abre a página já filtrada (?acompanhando=1).
+  const [parametros] = useSearchParams()
+  const [soSalvos, setSoSalvos] = useState(() => parametros.get('acompanhando') === '1')
   const qtdSalvos = publicos.filter((p) => salvos.includes(p.id)).length
 
   const filtrados = useMemo(

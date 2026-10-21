@@ -46,12 +46,10 @@ create trigger posts_forcar_anonimo
 
 update posts set anonimo = true where categoria = 'seguranca' and not anonimo;
 
--- Sem isto o anonimato seria só visual: qualquer um leria `user_id` direto
--- da tabela pela API. O público lê `posts` sem a coluna do autor; o autor só
--- aparece pela view abaixo, que o esconde quando o relato é anônimo.
-revoke select on posts from anon, authenticated;
-grant select (id, categoria, bairro, descricao, foto_url, latitude, longitude, repercussao, created_at, anonimo)
-  on posts to anon, authenticated;
+-- ATENÇÃO: aqui o anonimato ainda é só da interface — a tabela `posts` segue
+-- legível com `user_id`. Quem fecha isso é a 0007_fechar_autor.sql, que deve
+-- rodar junto com o merge da branch `repaginada` (a `main` antiga ainda lê
+-- `posts` direto e quebraria se a coluna fosse fechada antes).
 
 -- 3. Comentários -----------------------------------------------------------
 create table if not exists comentarios (
@@ -150,3 +148,106 @@ left join lateral (
 ) o on true;
 
 grant select on posts_repercussao to anon, authenticated;
+
+-- 7. Notificações -----------------------------------------------------------
+-- Criadas só pelo banco (gatilhos abaixo); a pessoa lê e marca como lida as
+-- próprias. Não há policy de insert: ninguém notifica outra pessoa pela API.
+create table if not exists notificacoes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  tipo text not null check (tipo in ('resposta_oficial', 'comentario', 'apoio', 'novo_relato_bairro')),
+  titulo text not null,
+  texto text,
+  link text,
+  lida boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists notificacoes_user_idx on notificacoes (user_id, created_at desc);
+alter table notificacoes enable row level security;
+
+drop policy if exists "notificacoes: ver as proprias" on notificacoes;
+create policy "notificacoes: ver as proprias" on notificacoes for select using (auth.uid() = user_id);
+drop policy if exists "notificacoes: marcar as proprias" on notificacoes;
+create policy "notificacoes: marcar as proprias" on notificacoes for update using (auth.uid() = user_id);
+drop policy if exists "notificacoes: apagar as proprias" on notificacoes;
+create policy "notificacoes: apagar as proprias" on notificacoes for delete using (auth.uid() = user_id);
+-- Do conteúdo, a pessoa só altera o "lida".
+revoke update on notificacoes from authenticated;
+grant update (lida) on notificacoes to authenticated;
+
+create or replace function nome_publico(p_id uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    case when institucional_verificado then orgao_nome end,
+    '@' || apelido,
+    nullif(split_part(nome, ' ', 1), ''),
+    'Alguém'
+  )
+  from profiles where id = p_id
+$$;
+
+create or replace function notificar_resposta_oficial() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_autor uuid;
+begin
+  select user_id into v_autor from posts where id = new.post_id;
+  if v_autor is not null and v_autor <> new.orgao_id then
+    insert into notificacoes (user_id, tipo, titulo, texto, link)
+    values (v_autor, 'resposta_oficial', coalesce(nome_publico(new.orgao_id), 'O órgão') || ' respondeu seu relato',
+            left(new.texto, 140), '/feed/' || new.post_id);
+  end if;
+  return new;
+end $$;
+drop trigger if exists notificar_resposta_oficial on respostas_oficiais;
+create trigger notificar_resposta_oficial after insert on respostas_oficiais
+  for each row execute function notificar_resposta_oficial();
+
+create or replace function notificar_comentario() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_autor uuid;
+begin
+  select user_id into v_autor from posts where id = new.post_id;
+  if v_autor is not null and v_autor <> new.user_id then
+    insert into notificacoes (user_id, tipo, titulo, texto, link)
+    values (v_autor, 'comentario', coalesce(nome_publico(new.user_id), 'Alguém') || ' comentou no seu relato',
+            left(new.texto, 140), '/feed/' || new.post_id);
+  end if;
+  return new;
+end $$;
+drop trigger if exists notificar_comentario on comentarios;
+create trigger notificar_comentario after insert on comentarios
+  for each row execute function notificar_comentario();
+
+create or replace function notificar_apoio() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_autor uuid;
+begin
+  select user_id into v_autor from posts where id = new.post_id;
+  if v_autor is not null and v_autor <> new.user_id then
+    insert into notificacoes (user_id, tipo, titulo, link)
+    values (v_autor, 'apoio', 'Seu relato recebeu um apoio', '/feed/' || new.post_id);
+  end if;
+  return new;
+end $$;
+drop trigger if exists notificar_apoio on post_apoios;
+create trigger notificar_apoio after insert on post_apoios
+  for each row execute function notificar_apoio();
+
+-- Relato novo num bairro seguido. Não revela o autor (pode ser anônimo).
+create or replace function notificar_novo_relato_bairro() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into notificacoes (user_id, tipo, titulo, texto, link)
+  select bs.user_id, 'novo_relato_bairro', 'Novo relato em ' || new.bairro, left(new.descricao, 140), '/feed/' || new.id
+  from bairros_seguidos bs
+  where lower(bs.bairro) = lower(new.bairro) and bs.user_id <> new.user_id;
+  return new;
+end $$;
+drop trigger if exists notificar_novo_relato_bairro on posts;
+create trigger notificar_novo_relato_bairro after insert on posts
+  for each row execute function notificar_novo_relato_bairro();
+
+-- Tempo real: o sino atualiza sem recarregar a página.
+do $$ begin
+  alter publication supabase_realtime add table notificacoes;
+exception when others then null; end $$;
