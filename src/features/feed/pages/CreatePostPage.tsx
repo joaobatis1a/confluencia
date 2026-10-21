@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../context/AuthContext'
 import LocationPicker, { isWithinRecifeMetro } from '../../../components/LocationPicker'
@@ -16,6 +17,10 @@ export default function CreatePostPage() {
   const [coords, setCoords] = useState<[number, number] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [anonimo, setAnonimo] = useState(false)
+  // Segurança é sempre anônimo (o banco também força isso — 0006).
+  const anonimoForcado = categoria === 'seguranca'
+  const anonimoEfetivo = anonimo || anonimoForcado
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -40,14 +45,19 @@ export default function CreatePostPage() {
     }
 
     setLoading(true)
-    const { error: insertError } = await supabase.from('posts').insert({
+    const relato = {
       user_id: user.id,
       categoria,
       bairro: bairro.trim(),
       descricao: descricao.trim(),
       latitude: coords[0],
       longitude: coords[1],
-    })
+    }
+    let { error: insertError } = await supabase.from('posts').insert({ ...relato, anonimo: anonimoEfetivo })
+    // Banco ainda sem a 0006 (sem a coluna `anonimo`): publica sem o campo.
+    if (insertError?.message.includes('anonimo')) {
+      ;({ error: insertError } = await supabase.from('posts').insert(relato))
+    }
     setLoading(false)
 
     if (insertError) {
@@ -92,6 +102,41 @@ export default function CreatePostPage() {
             />
           </div>
           <LocationPicker value={coords} onChange={setCoords} />
+
+          <div
+            className={`flex items-start gap-4 rounded-2xl border p-4 transition-colors ${
+              anonimoEfetivo ? 'border-grafite-900 bg-grafite-100' : 'border-grafite-200 bg-white'
+            }`}
+          >
+            <button
+              type="button"
+              role="switch"
+              aria-checked={anonimoEfetivo}
+              aria-label="Publicar sem mostrar quem relatou"
+              disabled={anonimoForcado}
+              onClick={() => setAnonimo((v) => !v)}
+              className={`relative mt-0.5 h-7 w-12 flex-shrink-0 rounded-full transition-colors disabled:cursor-not-allowed ${
+                anonimoEfetivo ? 'bg-grafite-900' : 'bg-grafite-300'
+              }`}
+            >
+              <motion.span
+                className="absolute top-1 left-1 h-5 w-5 rounded-full bg-white shadow"
+                animate={{ x: anonimoEfetivo ? 20 : 0 }}
+                transition={{ type: 'spring', stiffness: 600, damping: 32 }}
+              />
+            </button>
+            <span>
+              <span className="block text-sm font-semibold text-grafite-900">Publicar anônimo</span>
+              <span className="block text-xs text-grafite-700">
+                {anonimoForcado
+                  ? 'Relatos de segurança são sempre anônimos, para proteger quem denuncia.'
+                  : anonimoEfetivo
+                    ? 'Ninguém verá quem relatou — nem pela API. O relato continua sendo seu no seu perfil.'
+                    : 'Seu apelido aparece no relato e ele entra no seu perfil público.'}
+              </span>
+            </span>
+          </div>
+
           {error && <FormError>{error}</FormError>}
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? 'Publicando...' : 'Publicar'}

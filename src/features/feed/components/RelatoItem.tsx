@@ -1,12 +1,13 @@
 import type { MouseEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion'
-import { CATEGORIAS, type PostRepercussao } from '../../../types/database'
+import { CATEGORIAS, STATUS_RESPOSTA_LABELS, type PerfilPublico, type PostRepercussao } from '../../../types/database'
 import { formatRelativo, REPERCUSSAO_STYLES, nivelRepercussao } from '../../../lib/repercussao'
 import { CATEGORIA_RGB } from '../cores'
 import IconeCategoria from './IconeCategoria'
 import AnelRepercussao from './AnelRepercussao'
 import { realcar } from '../busca'
+import AutorLinha from './Autor'
 
 interface RelatoItemProps {
   post: PostRepercussao
@@ -15,6 +16,8 @@ interface RelatoItemProps {
   onVerNoMapa: (id: string) => void
   /** Termo da busca, para marcar os trechos encontrados. */
   busca?: string
+  /** Perfil público do autor (undefined em relato anônimo ou enquanto carrega). */
+  perfil?: PerfilPublico
 }
 
 const INCLINACAO = 7
@@ -22,7 +25,7 @@ const INCLINACAO = 7
 // Card da lista do Feed: inclina seguindo o mouse e acende um brilho na cor da
 // categoria onde está o cursor. Passar o mouse acende o pino no mapa; o alvo
 // à direita faz a câmera voar até o relato.
-export default function RelatoItem({ post, ativo, onHover, onVerNoMapa, busca = '' }: RelatoItemProps) {
+export default function RelatoItem({ post, ativo, onHover, onVerNoMapa, busca = '', perfil }: RelatoItemProps) {
   const reduzir = useReducedMotion()
   const [r, g, b] = CATEGORIA_RGB[post.categoria]
   const categoria = CATEGORIAS.find((c) => c.value === post.categoria)?.label ?? post.categoria
@@ -82,6 +85,15 @@ export default function RelatoItem({ post, ativo, onHover, onVerNoMapa, busca = 
           />
         )}
 
+        <div className="relative border-b border-grafite-100 px-4 pb-2 pt-3 pr-4">
+          <AutorLinha
+            userId={post.user_id}
+            perfil={post.user_id ? perfil : undefined}
+            anonimo={post.anonimo}
+            bairroDoRelato={post.bairro}
+          />
+        </div>
+
         <Link to={`/feed/${post.id}`} className="relative flex gap-3.5 p-4 pr-14" onFocus={() => onHover(post.id)}>
           <motion.span
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px] text-white shadow-sm"
@@ -109,9 +121,25 @@ export default function RelatoItem({ post, ativo, onHover, onVerNoMapa, busca = 
                 <span className={`block text-xs font-semibold ${nivel.text}`}>Repercussão {nivel.label}</span>
                 <span className="block truncate text-[11px] text-grafite-500">
                   {realcar(post.bairro, busca)} · {post.interacoes} {post.interacoes === 1 ? 'apoio' : 'apoios'}
+                  {typeof post.comentarios === 'number' &&
+                    ` · ${post.comentarios} ${post.comentarios === 1 ? 'comentário' : 'comentários'}`}
                 </span>
               </span>
             </span>
+            {post.status_oficial && (
+              <span
+                className={`mt-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                  post.status_oficial === 'virou_projeto' || post.status_oficial === 'resolvido'
+                    ? 'bg-status-verde-50 text-status-verde-700'
+                    : post.status_oficial === 'nao_procede'
+                      ? 'bg-grafite-100 text-grafite-700'
+                      : 'bg-status-azul-50 text-status-azul-700'
+                }`}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                Órgão: {STATUS_RESPOSTA_LABELS[post.status_oficial]}
+              </span>
+            )}
           </span>
         </Link>
 
