@@ -70,7 +70,7 @@ export default function ComoFunciona() {
       mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
         const el = trilho.current
         if (!el) return
-        const distancia = () => el.scrollWidth - window.innerWidth
+        const distancia = () => el.scrollWidth - document.documentElement.clientWidth
         gsap.to(el, {
           x: () => -distancia(),
           ease: 'none',

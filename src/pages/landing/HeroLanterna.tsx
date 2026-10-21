@@ -51,7 +51,7 @@ export default function HeroLanterna({ children }: { children: ReactNode }) {
       <img
         src={FOTO.url}
         alt="Rio Capibaribe à noite, no Recife"
-        className="absolute inset-0 h-full w-full scale-105 object-cover grayscale brightness-[0.45] contrast-125"
+        className="absolute inset-0 h-full w-full scale-105 object-cover grayscale brightness-[0.3] contrast-125"
       />
       <motion.img
         src={FOTO.url}

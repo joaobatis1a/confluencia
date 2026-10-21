@@ -104,9 +104,9 @@ export default function LandingPage() {
           </p>
           <h1
             data-hero-titulo
-            className="mt-4 max-w-5xl font-heading text-[clamp(3.2rem,9vw,8.5rem)] font-extrabold leading-[0.9] tracking-tight"
+            className="mt-4 max-w-5xl font-heading text-[clamp(3rem,8.5vw,8rem)] font-extrabold leading-[0.9] tracking-tight"
           >
-            Sua cidade <span className="font-serif font-normal italic text-amarelo-500">tem voz.</span>
+            Sua cidade <span className="whitespace-nowrap font-serif font-normal italic text-amarelo-500">tem voz.</span>
           </h1>
           <p data-hero-sub className="mt-6 max-w-xl text-lg text-white/80 sm:text-xl">
             Relate problemas, apoie vizinhos, vote nos projetos da cidade e acompanhe cada obra até a entrega — tudo num
@@ -189,7 +189,7 @@ export default function LandingPage() {
           </h2>
           <Link
             to="/feed"
-            className="mt-10 inline-flex items-center gap-2 rounded-full bg-grafite-900 px-8 py-4 text-lg font-bold text-amarelo-300 transition-transform hover:-translate-y-1"
+            className="mt-10 inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-lg font-bold text-grafite-900 shadow-[0_18px_40px_-16px_rgba(27,24,19,0.5)] transition-transform hover:-translate-y-1"
           >
             Entrar no Confluência →
           </Link>
@@ -254,9 +254,9 @@ function NavLanding() {
 function Colagem() {
   const secao = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({ target: secao, offset: ['start end', 'end start'] })
-  const rapido = useTransform(scrollYProgress, [0, 1], [120, -120])
-  const lento = useTransform(scrollYProgress, [0, 1], [40, -40])
-  const reverso = useTransform(scrollYProgress, [0, 1], [-60, 80])
+  const rapido = useTransform(scrollYProgress, [0, 1], [60, -60])
+  const lento = useTransform(scrollYProgress, [0, 1], [24, -24])
+  const reverso = useTransform(scrollYProgress, [0, 1], [-30, 40])
 
   const fotos = [
     { ...FOTOS_PROJETO.p6, y: lento, classe: 'lg:col-span-5 lg:row-span-2 h-80 lg:h-[30rem]' },
@@ -269,7 +269,7 @@ function Colagem() {
       licenca: 'Domínio público',
       fonte: CONTEUDO_PROJETO.p6.antesDepois!.antes.fonte,
       y: rapido,
-      classe: 'lg:col-span-3 h-64 lg:-mt-10',
+      classe: 'lg:col-span-3 h-64',
     },
     { ...FOTOS_PROJETO.p4, y: lento, classe: 'lg:col-span-4 h-64' },
   ]
@@ -281,7 +281,7 @@ function Colagem() {
         <h2 className="mt-4 max-w-3xl font-heading text-5xl font-extrabold leading-[0.95] text-grafite-900 sm:text-6xl">
           Cada relato tem <span className="font-serif font-normal italic text-amarelo-700">um endereço</span>
         </h2>
-        <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-12">
+        <div className="mt-16 grid grid-cols-1 gap-x-6 gap-y-16 sm:grid-cols-2 lg:grid-cols-12">
           {fotos.map((f) => (
             <motion.figure key={f.url} style={{ y: f.y }} className={`group ${f.classe}`}>
               <div className="h-full overflow-hidden rounded-[24px] bg-grafite-200">
@@ -289,7 +289,7 @@ function Colagem() {
                   src={f.url}
                   alt={f.local}
                   loading="lazy"
-                  className="h-full w-full object-cover grayscale transition-[filter,transform] duration-700 group-hover:scale-105 group-hover:grayscale-0"
+                  className="h-full w-full object-cover transition-[filter,transform] duration-700 group-hover:scale-105 lg:grayscale lg:group-hover:grayscale-0"
                 />
               </div>
               <figcaption className="mt-2 flex items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-grafite-700">
