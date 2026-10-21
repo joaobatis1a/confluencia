@@ -75,3 +75,28 @@ body {
 h1, h2, h3 {
   font-family: var(--font-heading);
 }
+
+/* Animações contínuas em CSS (rodam no compositor, sem custo de JS por quadro). */
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+@keyframes marquee-reverso {
+  from { transform: translate3d(-50%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+@keyframes flutuar {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -10px, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .anima-continua { animation: none !important; }
+}
+@keyframes balancar {
+  0%, 100% { transform: rotate(-1.2deg); }
+  50% { transform: rotate(1.2deg); }
+}
+@keyframes deriva-camera {
+  from { transform: scale(1.12) translate3d(2%, 1.5%, 0) rotate(-1.5deg); }
+  to { transform: scale(1.02) translate3d(-2%, -1%, 0) rotate(1deg); }
+}
