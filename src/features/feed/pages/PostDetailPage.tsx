@@ -11,9 +11,13 @@ import Contador from '../../../components/Contador'
 import IconeCategoria from '../components/IconeCategoria'
 import AnelRepercussao from '../components/AnelRepercussao'
 import ComparadorSimulacao from '../components/ComparadorSimulacao'
+import RespostasOficiais from '../components/RespostasOficiais'
+import Comentarios from '../components/Comentarios'
+import { Avatar, SeloOrgao } from '../components/Autor'
+import { nomePublico, usePerfis } from '../perfis'
 import { CATEGORIA_RGB, rgb } from '../cores'
 import { formatRelativo, nivelRepercussao, REPERCUSSAO_STYLES } from '../../../lib/repercussao'
-import { CATEGORIAS, type PostRepercussao } from '../../../types/database'
+import { CATEGORIAS, type PerfilPublico, type PostRepercussao } from '../../../types/database'
 
 gsap.registerPlugin(useGSAP, SplitText)
 
@@ -74,6 +78,7 @@ export default function PostDetailPage() {
 
 function RelatoDetalhe({ post, onAtualizar }: { post: PostRepercussao; onAtualizar: (p: PostRepercussao) => void }) {
   const raiz = useRef<HTMLDivElement>(null)
+  const perfis = usePerfis([post.user_id])
   const cor = rgb(CATEGORIA_RGB[post.categoria])
   const categoria = CATEGORIAS.find((c) => c.value === post.categoria)?.label ?? post.categoria
   const nivel = REPERCUSSAO_STYLES[nivelRepercussao(post.repercussao)]
@@ -149,7 +154,16 @@ function RelatoDetalhe({ post, onAtualizar }: { post: PostRepercussao; onAtualiz
 
       <div className="mx-auto grid max-w-7xl gap-16 px-5 sm:px-8 py-16 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
-          <Citacao texto={post.descricao} bairro={post.bairro} data={post.created_at} />
+          <Citacao
+            texto={post.descricao}
+            bairro={post.bairro}
+            data={post.created_at}
+            autorId={post.anonimo ? null : post.user_id}
+            perfil={post.user_id ? perfis.get(post.user_id) : undefined}
+            anonimo={post.anonimo}
+          />
+
+          <RespostasOficiais postId={post.id} />
 
           <section className="mt-20">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">Repercussão</p>
@@ -185,6 +199,8 @@ function RelatoDetalhe({ post, onAtualizar }: { post: PostRepercussao; onAtualiz
               <ComparadorSimulacao categoria={post.categoria} />
             </div>
           </section>
+
+          <Comentarios postId={post.id} />
         </div>
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -196,7 +212,16 @@ function RelatoDetalhe({ post, onAtualizar }: { post: PostRepercussao; onAtualiz
 }
 
 // O relato como citação, com uma "assinatura" que se desenha ao aparecer na tela.
-function Citacao({ texto, bairro, data }: { texto: string; bairro: string; data: string }) {
+interface CitacaoProps {
+  texto: string
+  bairro: string
+  data: string
+  autorId: string | null
+  perfil?: PerfilPublico
+  anonimo?: boolean
+}
+
+function Citacao({ texto, bairro, data, autorId, perfil, anonimo }: CitacaoProps) {
   const ref = useRef<HTMLDivElement>(null)
   const visivel = useInView(ref, { once: true, margin: '-15% 0px' })
 
@@ -229,11 +254,25 @@ function Citacao({ texto, bairro, data }: { texto: string; bairro: string; data:
             transition={{ duration: 1.4, ease: 'easeInOut', delay: 0.4 }}
           />
         </svg>
-        <p className="text-sm text-grafite-700">
-          <b className="text-grafite-900">Morador(a) de {bairro}</b>
-          <br />
-          {dataLonga(data)}
-        </p>
+        {autorId && perfil ? (
+          <Link to={`/u/${autorId}`} className="group flex items-center gap-3 rounded-full pr-4 hover:bg-grafite-100">
+            <Avatar perfil={perfil} size={40} />
+            <span className="text-sm text-grafite-700">
+              <b className="flex items-center gap-1.5 text-grafite-900 group-hover:underline">
+                {nomePublico(perfil)} {perfil.institucional_verificado && <SeloOrgao />}
+              </b>
+              {perfil.bairro ? `${perfil.bairro} · ` : ''}
+              {dataLonga(data)}
+            </span>
+          </Link>
+        ) : (
+          <p className="text-sm text-grafite-700">
+            <b className="text-grafite-900">Morador(a) de {bairro}</b>
+            {anonimo && <span className="ml-2 rounded-full bg-grafite-200 px-2 py-0.5 text-[11px] font-semibold">relato anônimo</span>}
+            <br />
+            {dataLonga(data)}
+          </p>
+        )}
       </div>
     </div>
   )

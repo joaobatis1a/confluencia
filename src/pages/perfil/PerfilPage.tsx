@@ -6,11 +6,11 @@ import { supabase } from '../../lib/supabase'
 import { Card } from '../../components/ui'
 import CategoryBadge from '../../components/CategoryBadge'
 import { formatRelativo } from '../../lib/repercussao'
-import type { Post } from '../../types/database'
+import type { PostRepercussao } from '../../types/database'
 
 export default function PerfilPage() {
   const { user, profile, loading } = useAuth()
-  const [meusPosts, setMeusPosts] = useState<Post[]>([])
+  const [meusPosts, setMeusPosts] = useState<PostRepercussao[]>([])
   const [postsLoading, setPostsLoading] = useState(true)
 
   useEffect(() => {
@@ -19,8 +19,10 @@ export default function PerfilPage() {
       return
     }
     let cancelled = false
+    // Lê da view: depois da 0006 a coluna do autor fica fechada na tabela
+    // `posts`, e a view devolve o user_id ao próprio autor (inclusive anônimos).
     supabase
-      .from('posts')
+      .from('posts_repercussao')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })

@@ -11,6 +11,8 @@ import EmAltaCard from '../components/EmAltaCard'
 import SeletorBairro from '../components/SeletorBairro'
 import GavetaMobile, { type GavetaMobileHandle } from '../components/GavetaMobile'
 import { useDesktop } from '../useDesktop'
+import { usePerfis } from '../perfis'
+import { useBairrosSeguidos } from '../useBairrosSeguidos'
 import { normalizar } from '../busca'
 import { nivelRepercussao } from '../../../lib/repercussao'
 import { RAMPA_REPERCUSSAO, rgb } from '../cores'
@@ -43,6 +45,8 @@ export default function FeedPage() {
   // Ao rolar a lista, o cabeçalho do painel se recolhe e devolve espaço aos cards.
   const [compacto, setCompacto] = useState(false)
   const [busca, setBusca] = useState('')
+  const [soMeusBairros, setSoMeusBairros] = useState(false)
+  const { bairros: seguidos, disponivel: podeSeguir, alternar: alternarBairro } = useBairrosSeguidos()
   // Instante de referência para separar "Hoje / Esta semana / Antes".
   const [agora] = useState(() => Date.now())
   const campoBusca = useRef<HTMLInputElement>(null)
@@ -90,11 +94,14 @@ export default function FeedPage() {
     return posts.filter((p) => {
       if (categoria !== 'todas' && p.categoria !== categoria) return false
       if (bairro && p.bairro !== bairro) return false
+      if (soMeusBairros && !seguidos.includes(p.bairro)) return false
       if (!termo) return true
       const rotulo = CATEGORIAS.find((c) => c.value === p.categoria)?.label ?? ''
       return normalizar(`${p.descricao} ${p.bairro} ${rotulo}`).includes(termo)
     })
-  }, [posts, categoria, bairro, busca])
+  }, [posts, categoria, bairro, busca, soMeusBairros, seguidos])
+
+  const perfis = usePerfis(posts.map((p) => p.user_id))
 
   // Abertura: painel desliza, o título sobe letra a letra, filtros e controles entram em sequência.
   useGSAP(
@@ -279,7 +286,38 @@ export default function FeedPage() {
         {filtrados.length === 1 ? 'relato' : 'relatos'}
         {busca.trim() && ` para "${busca.trim()}"`}
       </span>
-      <SeletorBairro opcoes={bairros} totalGeral={posts.length} value={bairro} onChange={setBairro} />
+      <span className="flex items-center gap-1.5">
+        {podeSeguir && seguidos.length > 0 && !bairro && (
+          <button
+            type="button"
+            onClick={() => setSoMeusBairros((v) => !v)}
+            aria-pressed={soMeusBairros}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+              soMeusBairros
+                ? 'border-amarelo-500 bg-amarelo-500 text-grafite-900'
+                : 'border-grafite-200 bg-white text-grafite-900 hover:border-amarelo-500'
+            }`}
+          >
+            Meus bairros · {seguidos.length}
+          </button>
+        )}
+        {podeSeguir && bairro && (
+          <motion.button
+            type="button"
+            onClick={() => alternarBairro(bairro)}
+            aria-pressed={seguidos.includes(bairro)}
+            whileTap={{ scale: 0.94 }}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+              seguidos.includes(bairro)
+                ? 'border-amarelo-500 bg-amarelo-500 text-grafite-900'
+                : 'border-grafite-200 bg-white text-grafite-900 hover:border-amarelo-500'
+            }`}
+          >
+            {seguidos.includes(bairro) ? '✓ Seguindo' : '+ Seguir'}
+          </motion.button>
+        )}
+        <SeletorBairro opcoes={bairros} totalGeral={posts.length} value={bairro} onChange={setBairro} />
+      </span>
     </div>
   )
 
@@ -337,6 +375,7 @@ export default function FeedPage() {
                       onHover={setDestaque}
                       onVerNoMapa={verNoMapaEMostrar}
                       busca={busca}
+                      perfil={post.user_id ? perfis.get(post.user_id) : undefined}
                     />
                   ))}
                 </AnimatePresence>

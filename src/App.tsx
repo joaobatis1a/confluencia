@@ -11,6 +11,7 @@ import CriarProjetoPage from './features/projetos/pages/CriarProjetoPage'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
 import PerfilPage from './pages/perfil/PerfilPage'
+import PerfilPublicoPage from './features/feed/pages/PerfilPublicoPage'
 import RequireInstitutional from './components/RequireInstitutional'
 import PageTransition from './components/PageTransition'
 import NavBar from './components/NavBar'
@@ -49,6 +50,7 @@ function AnimatedRoutes() {
         <Route path="/entrar" element={<PageTransition><LoginPage /></PageTransition>} />
         <Route path="/cadastro" element={<PageTransition><SignupPage /></PageTransition>} />
         <Route path="/perfil" element={<PageTransition><PerfilPage /></PageTransition>} />
+        <Route path="/u/:id" element={<PageTransition><PerfilPublicoPage /></PageTransition>} />
       </Routes>
     </AnimatePresence>
   )

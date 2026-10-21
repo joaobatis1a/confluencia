@@ -251,7 +251,8 @@ function MenuConta() {
 
             <div className="p-2">
               {[
-                { to: '/perfil', rotulo: 'Meu perfil', icone: ICONES.perfil, mostrar: true },
+                { to: `/u/${user.id}`, rotulo: 'Meu perfil público', icone: ICONES.feed, mostrar: true },
+                { to: '/perfil', rotulo: 'Minha conta', icone: ICONES.perfil, mostrar: true },
                 { to: '/painel', rotulo: 'Painel de gestor', icone: ICONES.painel, mostrar: ehGestor },
               ]
                 .filter((i) => i.mostrar)
