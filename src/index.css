@@ -58,6 +58,8 @@
   /* Tipografia */
   --font-heading: "Bricolage Grotesque", system-ui, sans-serif;
   --font-body: "Public Sans", system-ui, sans-serif;
+  /* Serifa de destaque — só para palavras de ênfase na landing */
+  --font-serif: "Instrument Serif", Georgia, serif;
 
   /* Raio — cantos generosos: 10px inputs/botões, 16px cards, pill badges */
   --radius-field: 10px;
