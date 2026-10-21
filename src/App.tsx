@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import FeedPage from './features/feed/pages/FeedPage'
 import CreatePostPage from './features/feed/pages/CreatePostPage'
@@ -9,7 +9,6 @@ import ProjetoDetailPage from './features/projetos/pages/ProjetoDetailPage'
 import PainelGestorPage from './features/projetos/pages/PainelGestorPage'
 import CriarProjetoPage from './features/projetos/pages/CriarProjetoPage'
 import LoginPage from './pages/auth/LoginPage'
-import SignupPage from './pages/auth/SignupPage'
 import PerfilPage from './pages/perfil/PerfilPage'
 import PerfilPublicoPage from './features/feed/pages/PerfilPublicoPage'
 import RequireInstitutional from './components/RequireInstitutional'
@@ -50,7 +49,8 @@ function AnimatedRoutes() {
           }
         />
         <Route path="/entrar" element={<PageTransition><LoginPage /></PageTransition>} />
-        <Route path="/cadastro" element={<PageTransition><SignupPage /></PageTransition>} />
+        {/* MVP: cadastro fechado — a tela de entrar explica e lista as contas de demonstração. */}
+        <Route path="/cadastro" element={<Navigate to="/entrar?cadastro=1" replace />} />
         <Route path="/perfil" element={<PageTransition><PerfilPage /></PageTransition>} />
         <Route path="/u/:id" element={<PageTransition><PerfilPublicoPage /></PageTransition>} />
       </Routes>
@@ -72,8 +72,8 @@ function VoltarAoTopo() {
 }
 
 function App() {
-  // A landing ("/") tem barra própria, em tela cheia sobre a foto.
-  const naLanding = useLocation().pathname === '/'
+  // A landing ("/") e a tela de entrar são de tela cheia, com barra própria.
+  const naLanding = ['/', '/entrar'].includes(useLocation().pathname)
   return (
     <div className="min-h-screen bg-grafite-50">
       <VoltarAoTopo />

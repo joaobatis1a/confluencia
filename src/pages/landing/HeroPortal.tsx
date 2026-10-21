@@ -32,7 +32,11 @@ const LUGARES = [
 ]
 
 interface HeroPortalProps {
+  /** Relatos que viram cartões flutuando (só os "de vitrine"). */
   relatos: RelatoVitrine[]
+  /** Todos os relatos, como pinos no mapa. */
+  pontos: PontoMapa[]
+  carregou: boolean
   totais: { relatos: number; bairros: number }
   pronto: boolean
 }
@@ -40,7 +44,7 @@ interface HeroPortalProps {
 // Topo da landing: as palavras enormes e, entre elas, uma janela em cápsula
 // com o Recife vivo em 3D. Ao rolar, a janela se abre até a cidade ocupar a
 // tela inteira — a pessoa "entra" na cidade.
-export default function HeroPortal({ relatos, totais, pronto }: HeroPortalProps) {
+export default function HeroPortal({ relatos, pontos, carregou, totais, pronto }: HeroPortalProps) {
   const secao = useRef<HTMLElement>(null)
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
@@ -68,8 +72,19 @@ export default function HeroPortal({ relatos, totais, pronto }: HeroPortalProps)
             desktop: boolean
             reduzir: boolean
           }
-          const inicio = desktop ? 'inset(19% 33% 19% 33% round 400px)' : 'inset(30% 8% 32% 8% round 220px)'
-          gsap.set('[data-janela]', { clipPath: inicio })
+          // A janela é um elipse que cresce só com transform (barato): a moldura
+          // escala e o conteúdo escala ao contrário, então a cidade não deforma.
+          // No fim ela passa de 1.45x, quando o elipse já cobre a tela toda.
+          const [ix, iy] = desktop ? [0.34, 0.62] : [0.84, 0.38]
+          const moldura = secao.current!.querySelector<HTMLElement>('[data-janela]')!
+          const dentroX = gsap.quickSetter('[data-janela-dentro]', 'scaleX')
+          const dentroY = gsap.quickSetter('[data-janela-dentro]', 'scaleY')
+          const compensar = () => {
+            dentroX(1 / Number(gsap.getProperty(moldura, 'scaleX')))
+            dentroY(1 / Number(gsap.getProperty(moldura, 'scaleY')))
+          }
+          gsap.set(moldura, { scaleX: ix, scaleY: iy })
+          compensar()
           if (reduzir) return
           gsap
             .timeline({
@@ -77,12 +92,17 @@ export default function HeroPortal({ relatos, totais, pronto }: HeroPortalProps)
               scrollTrigger: {
                 trigger: secao.current,
                 start: 'top top',
-                end: '+=130%',
+                end: '+=95%',
                 pin: true,
-                scrub: 0.6,
+                scrub: 0.25,
               },
             })
-            .fromTo('[data-janela]', { clipPath: inicio }, { clipPath: 'inset(0% 0% 0% 0% round 0px)', duration: 1 }, 0)
+            .fromTo(
+              moldura,
+              { scaleX: ix, scaleY: iy },
+              { scaleX: 1.45, scaleY: 1.45, duration: 1, ease: 'power1.in', onUpdate: compensar },
+              0,
+            )
             .to('[data-linha="1"]', { xPercent: -60, opacity: 0, duration: 0.7 }, 0)
             .to('[data-linha="2"]', { xPercent: 60, opacity: 0, duration: 0.7 }, 0)
             .to('[data-cartoes]', { y: '-35vh', opacity: 0, duration: 0.55 }, 0)
@@ -129,9 +149,10 @@ export default function HeroPortal({ relatos, totais, pronto }: HeroPortalProps)
     <section ref={secao} onPointerMove={mover} className="relative h-[100svh] overflow-hidden bg-grafite-50">
       {/* A cidade, vista pela janela */}
       <div data-janela-escala className="absolute inset-0">
-        <div data-janela className="absolute inset-0 bg-[#9fd3d6] [will-change:clip-path]">
-          <MapaCidade pontos={relatos} />
-          <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_rgba(27,24,19,0.18)]" />
+        <div data-janela className="absolute inset-0 overflow-hidden rounded-[50%] bg-[#9fd3d6] will-change-transform">
+          <div data-janela-dentro className="absolute inset-0 will-change-transform">
+            <MapaCidade pontos={pontos} carregou={carregou} />
+          </div>
         </div>
       </div>
 

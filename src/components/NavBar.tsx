@@ -183,7 +183,7 @@ function MenuConta() {
   async function sair() {
     setAberto(false)
     await signOut()
-    navigate('/feed')
+    navigate('/')
   }
 
   return (
@@ -350,20 +350,13 @@ export default function NavBar() {
               <MenuConta />
             </>
           ) : (
-            <>
-              <Link
-                to="/entrar"
-                className="rounded-full px-3 py-2 text-sm font-semibold text-grafite-900 hover:bg-grafite-100"
-              >
-                Entrar
-              </Link>
-              <Link
-                to="/cadastro"
-                className="hidden sm:inline-flex rounded-full bg-amarelo-500 px-4 py-2 text-sm font-semibold text-grafite-900 shadow-[0_8px_18px_-10px_rgba(245,184,0,0.9)] transition-transform hover:-translate-y-0.5"
-              >
-                Criar conta
-              </Link>
-            </>
+            // MVP: sem cadastro aberto — "Entrar" leva às contas de demonstração.
+            <Link
+              to="/entrar"
+              className="rounded-full bg-amarelo-500 px-4 py-2 text-sm font-semibold text-grafite-900 shadow-[0_8px_18px_-10px_rgba(245,184,0,0.9)] transition-transform hover:-translate-y-0.5"
+            >
+              Entrar
+            </Link>
           )}
         </div>
       </div>
