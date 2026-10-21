@@ -1,4 +1,3 @@
-import { useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import gsap from 'gsap'
@@ -10,7 +9,6 @@ import TrilhoEtapas from '../components/TrilhoEtapas'
 import ConsultaDestaque from '../components/ConsultaDestaque'
 import ProjetoCartao from '../components/ProjetoCartao'
 import { ETAPAS_PUBLICAS } from '../etapas'
-import { useProjetosSalvos } from '../useProjetosSalvos'
 import type { ProjetoStatus, VotosResultado } from '../../../types/database'
 
 gsap.registerPlugin(useGSAP, SplitText)
@@ -40,22 +38,16 @@ export default function ProjetosPage() {
     return c
   }, [publicos])
 
-  const { salvos } = useProjetosSalvos()
-  // "Acompanhando" do menu do usuário abre a página já filtrada (?acompanhando=1).
-  const [parametros] = useSearchParams()
-  const [soSalvos, setSoSalvos] = useState(() => parametros.get('acompanhando') === '1')
-  const qtdSalvos = publicos.filter((p) => salvos.includes(p.id)).length
-
   const filtrados = useMemo(
     () =>
       publicos.filter(
-        (p) => (status === 'todos' || p.status === status) && (!soSalvos || salvos.includes(p.id)),
+        (p) => status === 'todos' || p.status === status,
       ),
-    [publicos, status, soSalvos, salvos],
+    [publicos, status],
   )
   const destaques =
     status === 'todos' || status === 'em_consulta'
-      ? emConsulta.filter((p) => !soSalvos || salvos.includes(p.id))
+      ? emConsulta
       : []
   const grade = filtrados.filter((p) => !destaques.includes(p))
 
@@ -109,34 +101,8 @@ export default function ProjetosPage() {
         </p>
       </header>
 
-      <div className="mt-10 flex flex-wrap items-center justify-between gap-4">
+      <div className="mt-10">
         <TrilhoEtapas contagem={contagem} total={publicos.length} value={status} onChange={setStatus} />
-        <motion.button
-          type="button"
-          onClick={() => setSoSalvos((v) => !v)}
-          aria-pressed={soSalvos}
-          whileTap={{ scale: 0.96 }}
-          className={`inline-flex items-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-bold transition-colors ${
-            soSalvos
-              ? 'border-amarelo-500 bg-amarelo-500 text-grafite-900'
-              : 'border-grafite-200 bg-white text-grafite-900 hover:border-amarelo-500'
-          }`}
-        >
-          <svg viewBox="0 0 24 24" width={16} height={16} fill={soSalvos ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} aria-hidden>
-            <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z" strokeLinejoin="round" />
-          </svg>
-          Acompanhando
-          <motion.span
-            key={qtdSalvos}
-            initial={{ scale: 1.6 }}
-            animate={{ scale: 1 }}
-            className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs ${
-              soSalvos ? 'bg-grafite-900 text-amarelo-300' : 'bg-amarelo-100 text-amarelo-900'
-            }`}
-          >
-            {qtdSalvos}
-          </motion.span>
-        </motion.button>
       </div>
 
       <AnimatePresence mode="popLayout">
@@ -169,12 +135,10 @@ export default function ProjetosPage() {
             className="rounded-[28px] border-2 border-dashed border-grafite-200 px-6 py-14 text-center"
           >
             <p className="font-heading text-xl font-bold text-grafite-900">
-              {soSalvos ? 'Você ainda não acompanha nenhum projeto aqui' : 'Nenhum projeto nesta etapa agora'}
+              Nenhum projeto nesta etapa agora
             </p>
             <p className="mt-1 text-sm text-grafite-500">
-              {soSalvos
-                ? 'Toque no marcador de um projeto para acompanhá-lo.'
-                : 'Escolha outra etapa no trilho ou volte para "Todos".'}
+              Escolha outra etapa no trilho ou volte para "Todos".
             </p>
           </motion.div>
         ) : (

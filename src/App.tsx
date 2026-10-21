@@ -15,13 +15,15 @@ import PerfilPublicoPage from './features/feed/pages/PerfilPublicoPage'
 import RequireInstitutional from './components/RequireInstitutional'
 import PageTransition from './components/PageTransition'
 import NavBar from './components/NavBar'
+import BotaoRelatar from './components/BotaoRelatar'
+import LandingPage from './pages/landing/LandingPage'
 
 function AnimatedRoutes() {
   const location = useLocation()
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><FeedPage /></PageTransition>} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/feed" element={<PageTransition><FeedPage /></PageTransition>} />
         <Route path="/feed/novo" element={<PageTransition><CreatePostPage /></PageTransition>} />
         <Route path="/feed/:id" element={<PageTransition><PostDetailPage /></PageTransition>} />
@@ -70,11 +72,14 @@ function VoltarAoTopo() {
 }
 
 function App() {
+  // A landing ("/") tem barra própria, em tela cheia sobre a foto.
+  const naLanding = useLocation().pathname === '/'
   return (
     <div className="min-h-screen bg-grafite-50">
       <VoltarAoTopo />
-      <NavBar />
+      {!naLanding && <NavBar />}
       <AnimatedRoutes />
+      <BotaoRelatar />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import gsap from 'gsap'
 import { SplitText } from 'gsap/SplitText'
@@ -191,15 +191,6 @@ export default function FeedPage() {
           </span>
           <span className="block text-[11px] lg:text-xs text-grafite-500">relatos na cidade</span>
         </p>
-        {!desktop && (
-          <Link
-            to="/feed/novo"
-            aria-label="Relatar problema"
-            className="mb-0.5 flex h-11 w-11 items-center justify-center rounded-full bg-amarelo-500 text-2xl font-semibold leading-none text-grafite-900 shadow-[0_10px_22px_-10px_rgba(245,184,0,0.9)] active:scale-95"
-          >
-            +
-          </Link>
-        )}
       </div>
     </div>
   )
