@@ -49,13 +49,12 @@ export default function AntesDepois() {
   return (
     <section ref={secao} className="relative h-[100svh] overflow-hidden bg-grafite-900 text-white">
       <img data-antes src={par.antes.url} alt={par.antes.legenda} className="absolute inset-0 h-full w-full object-cover" />
-      <div data-hoje className="absolute inset-0 overflow-hidden will-change-transform" style={{ transform: 'translateX(-100%)' }}>
+      <div data-hoje className="absolute inset-0 overflow-hidden will-change-transform">
         <img
           data-hoje-img
           src={par.depois.url}
           alt={par.depois.legenda}
           className="absolute inset-0 h-full w-full object-cover will-change-transform"
-          style={{ transform: 'translateX(100%)' }}
         />
       </div>
       <span

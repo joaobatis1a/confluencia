@@ -155,7 +155,7 @@ export default function PerfilPublicoPage() {
 
   async function sair() {
     await signOut()
-    navigate('/feed')
+    navigate('/')
   }
 
   return (

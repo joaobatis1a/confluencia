@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SplitText } from 'gsap/SplitText'
 import { useGSAP } from '@gsap/react'
 import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../context/AuthContext'
 import Contador from '../../components/Contador'
 import { MOCK_PROJETOS } from '../../features/projetos/mock'
 import { FOTOS_PROJETO } from '../../features/projetos/fotos'
@@ -101,7 +100,7 @@ export default function LandingPage() {
       <AnimatePresence>{abertura && <Preloader onFim={fimAbertura} />}</AnimatePresence>
       <NavLanding />
 
-      <HeroPortal relatos={vitrine} totais={totais} pronto={!abertura} />
+      <HeroPortal relatos={vitrine} pontos={relatos} carregou={carregou} totais={totais} pronto={!abertura} />
 
       <Manifesto />
 
@@ -125,12 +124,13 @@ function NavLanding() {
   const { scrollY } = useScroll()
   const [escondida, setEscondida] = useState(false)
   const [solida, setSolida] = useState(false)
+  // Só muda o estado quando muda de verdade (o evento dispara a cada quadro).
   useMotionValueEvent(scrollY, 'change', (v) => {
     const anterior = scrollY.getPrevious() ?? 0
-    setEscondida(v > anterior && v > 200)
-    setSolida(v > 40)
+    const esconder = v > anterior && v > 200
+    setEscondida((e) => (e === esconder ? e : esconder))
+    setSolida((s) => (s === v > 40 ? s : v > 40))
   })
-  const { user } = useAuth()
 
   return (
     <motion.header
@@ -140,7 +140,7 @@ function NavLanding() {
     >
       <div
         className={`mx-auto flex h-14 max-w-7xl items-center justify-between rounded-full pl-3 pr-2 transition-[background-color,box-shadow] duration-300 ${
-          solida ? 'bg-white/80 shadow-[0_10px_30px_-18px_rgba(27,24,19,0.5)] backdrop-blur-xl' : ''
+          solida ? 'bg-white shadow-[0_10px_30px_-18px_rgba(27,24,19,0.5)]' : ''
         }`}
       >
         <Link to="/" className="flex items-center gap-2.5">
@@ -165,10 +165,10 @@ function NavLanding() {
           )}
         </nav>
         <Link
-          to={user ? '/feed' : '/entrar'}
+          to="/entrar"
           className="rounded-full bg-amarelo-500 px-5 py-2.5 text-sm font-bold text-grafite-900 transition-transform hover:-translate-y-0.5"
         >
-          {user ? 'Abrir o app' : 'Entrar'}
+          Entrar
         </Link>
       </div>
     </motion.header>
@@ -276,61 +276,110 @@ function Final() {
   )
 }
 
-// Colagem de fotos da cidade com legenda de lugar; cada uma anda numa
-// velocidade diferente ao rolar e ganha cor no hover.
-function Colagem() {
-  const secao = useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({ target: secao, offset: ['start end', 'end start'] })
-  const rapido = useTransform(scrollYProgress, [0, 1], [60, -60])
-  const lento = useTransform(scrollYProgress, [0, 1], [24, -24])
-  const reverso = useTransform(scrollYProgress, [0, 1], [-30, 40])
+// A cidade, de perto: duas fileiras de fotos correndo em sentidos opostos,
+// sem fim. A animação é CSS (compositor); passar o mouse numa fileira a faz
+// parar, e a foto sob o mouse se endireita e chega mais perto.
+interface FotoCidade {
+  url: string
+  local: string
+  autor: string
+  licenca: string
+  fonte: string
+}
 
-  const fotos = [
-    { ...FOTOS_PROJETO.p6, y: lento, classe: 'lg:col-span-5 lg:row-span-2 h-80 lg:h-[30rem]' },
-    { ...FOTOS_PROJETO.p5, y: rapido, classe: 'lg:col-span-4 h-60 lg:mt-24' },
-    { ...FOTOS_PROJETO.p1, y: reverso, classe: 'lg:col-span-3 h-56' },
-    {
-      url: CONTEUDO_PROJETO.p6.antesDepois!.antes.url,
-      local: 'Rua dos Judeus · 1855',
-      autor: 'Augusto Stahl',
-      licenca: 'Domínio público',
-      fonte: CONTEUDO_PROJETO.p6.antesDepois!.antes.fonte,
-      y: rapido,
-      classe: 'lg:col-span-3 h-64',
-    },
-    { ...FOTOS_PROJETO.p4, y: lento, classe: 'lg:col-span-4 h-64' },
-  ]
+const CAPIBARIBE_NOITE: FotoCidade = {
+  url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/Rio_Capibaribe_%C3%A0_noite%2C_Recife_%28PE%29.jpg/1280px-Rio_Capibaribe_%C3%A0_noite%2C_Recife_%28PE%29.jpg',
+  local: 'Capibaribe à noite',
+  autor: 'Marcos Elias de Oliveira Júnior',
+  licenca: 'CC0',
+  fonte: 'https://commons.wikimedia.org/wiki/File:Rio_Capibaribe_%C3%A0_noite,_Recife_(PE).jpg',
+}
 
+const RUA_DOS_JUDEUS: FotoCidade = {
+  url: CONTEUDO_PROJETO.p6.antesDepois!.antes.url,
+  local: 'Rua dos Judeus · 1855',
+  autor: 'Augusto Stahl',
+  licenca: 'Domínio público',
+  fonte: CONTEUDO_PROJETO.p6.antesDepois!.antes.fonte,
+}
+
+const FILEIRA_1: FotoCidade[] = [FOTOS_PROJETO.p6, FOTOS_PROJETO.p2, CAPIBARIBE_NOITE, FOTOS_PROJETO.p1]
+const FILEIRA_2: FotoCidade[] = [FOTOS_PROJETO.p5, RUA_DOS_JUDEUS, FOTOS_PROJETO.p4, FOTOS_PROJETO.p2]
+
+function CartaoFoto({ f, i, grande }: { f: FotoCidade; i: number; grande: boolean }) {
+  const inclinacao = ['rotate-[-2deg]', 'rotate-[1.5deg]', 'rotate-[-1deg]', 'rotate-[2deg]'][i % 4]
   return (
-    <section ref={secao} className="overflow-hidden bg-grafite-50 py-28">
-      <div className="mx-auto max-w-7xl px-6 sm:px-10">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-amarelo-700">A cidade, de perto</p>
-        <h2 className="mt-4 max-w-3xl font-heading text-5xl font-extrabold leading-[0.95] text-grafite-900 sm:text-6xl">
-          Cada relato tem <span className="font-serif font-normal italic text-amarelo-700">um endereço</span>
-        </h2>
-        <div className="mt-16 grid grid-cols-1 gap-x-6 gap-y-16 sm:grid-cols-2 lg:grid-cols-12">
-          {fotos.map((f) => (
-            <motion.figure key={f.url} style={{ y: f.y }} className={`group ${f.classe}`}>
-              <div className="h-full overflow-hidden rounded-[24px] bg-grafite-200">
-                <img
-                  src={f.url}
-                  alt={f.local}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-[filter,transform] duration-700 group-hover:scale-105 lg:grayscale lg:group-hover:grayscale-0"
-                />
-              </div>
-              <figcaption className="mt-2 flex items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-grafite-700">
-                <span className="flex items-center gap-2">
-                  <span className="h-2 w-6 rounded-full bg-amarelo-500" />
-                  {f.local}
-                </span>
-                <a href={f.fonte} target="_blank" rel="noreferrer" className="font-medium normal-case tracking-normal text-grafite-500 hover:underline">
-                  {f.autor} · {f.licenca}
-                </a>
-              </figcaption>
-            </motion.figure>
-          ))}
+    <figure
+      className={`group/foto relative mx-3 flex-shrink-0 overflow-hidden rounded-[28px] bg-grafite-200 shadow-[0_30px_50px_-30px_rgba(27,24,19,0.55)] transition-transform duration-500 ease-out hover:z-10 hover:-translate-y-2 hover:rotate-0 hover:scale-[1.04] ${inclinacao} ${
+        grande ? (i % 2 ? 'h-[22rem] w-[19rem]' : 'h-[22rem] w-[28rem]') : i % 2 ? 'h-64 w-[24rem]' : 'h-64 w-[17rem]'
+      } max-w-[80vw]`}
+    >
+      <img
+        src={f.url}
+        alt={f.local}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover/foto:scale-110"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+      <figcaption className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3">
+        <span className="flex items-center gap-1.5 rounded-full bg-amarelo-500 px-3 py-1.5 text-xs font-bold text-grafite-900">
+          <svg viewBox="0 0 24 24" width={13} height={13} fill="currentColor" aria-hidden>
+            <path d="M12 22s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12Zm0-9.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+          </svg>
+          {f.local}
+        </span>
+        <a
+          href={f.fonte}
+          target="_blank"
+          rel="noreferrer"
+          className="pointer-events-auto text-right text-[10px] leading-tight text-white/75 opacity-0 transition-opacity group-hover/foto:opacity-100 hover:underline"
+        >
+          {f.autor}
+          <br />
+          {f.licenca}
+        </a>
+      </figcaption>
+    </figure>
+  )
+}
+
+function Fileira({ fotos, grande, duracao, reverso }: { fotos: FotoCidade[]; grande: boolean; duracao: number; reverso?: boolean }) {
+  const volta = fotos.map((f, i) => <CartaoFoto key={i} f={f} i={i} grande={grande} />)
+  return (
+    <div className="group/fileira flex overflow-hidden py-4">
+      <div
+        className="anima-continua flex w-max will-change-transform group-hover/fileira:[animation-play-state:paused]"
+        style={{ animation: `${reverso ? 'marquee-reverso' : 'marquee'} ${duracao}s linear infinite` }}
+      >
+        {/* duas voltas idênticas para o laço não ter emenda */}
+        <div className="flex">{volta}</div>
+        <div className="flex" aria-hidden>
+          {volta}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function Colagem() {
+  return (
+    <section className="overflow-hidden bg-grafite-50 py-28">
+      <div className="flex flex-wrap items-end justify-between gap-6 px-[4vw]">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-amarelo-700">A cidade, de perto</p>
+          <h2 className="mt-4 max-w-3xl font-heading text-[clamp(2.6rem,6vw,6rem)] font-extrabold leading-[0.92] tracking-[-0.03em] text-grafite-900">
+            Cada relato tem <span className="font-serif font-normal italic text-amarelo-700">um endereço</span>
+          </h2>
+        </div>
+        <p className="max-w-xs text-grafite-700">
+          Ruas, pontes e praças do Recife — os lugares onde os relatos acontecem. Passe o mouse para parar.
+        </p>
+      </div>
+      <div className="mt-14 [mask-image:linear-gradient(90deg,transparent,black_6%,black_94%,transparent)]">
+        <Fileira fotos={FILEIRA_1} grande duracao={55} />
+        <Fileira fotos={FILEIRA_2} grande={false} duracao={70} reverso />
       </div>
     </section>
   )
