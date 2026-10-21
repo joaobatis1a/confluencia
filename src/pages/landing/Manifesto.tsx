@@ -11,9 +11,9 @@ type Trecho = { texto: string; serif?: boolean } | { img: string; alt: string }
 const TEXTO: Trecho[] = [
   { texto: 'Todo dia alguém passa por um buraco,' },
   { img: FOTOS_PROJETO.p1.url, alt: 'Avenida Norte' },
-  { texto: 'um poste apagado, uma calçada quebrada' },
+  { texto: 'um poste apagado, uma calçada quebrada,' },
   { img: FOTOS_PROJETO.p5.url, alt: 'Rua da Aurora' },
-  { texto: '— e segue. O Confluência junta essas vozes' },
+  { texto: 'e segue. O Confluência junta essas vozes' },
   { img: '/logo.png', alt: 'Confluência' },
   { texto: 'num mapa que' },
   { texto: 'ninguém consegue ignorar,', serif: true },

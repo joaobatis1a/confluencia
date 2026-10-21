@@ -1,14 +1,9 @@
-import { useRef, type PointerEvent } from 'react'
+import { useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from 'framer-motion'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SplitText } from 'gsap/SplitText'
 import { useGSAP } from '@gsap/react'
-import type { Categoria } from '../../types/database'
-import { CATEGORIAS } from '../../types/database'
-import { CATEGORIA_RGB, rgb } from '../../features/feed/cores'
-import IconeCategoria from '../../features/feed/components/IconeCategoria'
 import MapaCidade, { type PontoMapa } from './MapaCidade'
 import Magnetico from './Magnetico'
 
@@ -20,20 +15,7 @@ export interface RelatoVitrine extends PontoMapa {
   interacoes: number
 }
 
-// Onde cada cartão de relato flutua em volta da janela, e quanto ele anda
-// com o mouse (profundidade).
-const LUGARES = [
-  { classe: 'right-[5vw] top-[17vh] rotate-[5deg]', fundo: 1.4 },
-  { classe: 'left-[4vw] bottom-[25vh] -rotate-[6deg]', fundo: 1.0 },
-  {
-    classe: 'right-[10vw] bottom-[33vh] -rotate-[3deg] hidden xl:block',
-    fundo: 0.6,
-  },
-]
-
 interface HeroPortalProps {
-  /** Relatos que viram cartões flutuando (só os "de vitrine"). */
-  relatos: RelatoVitrine[]
   /** Todos os relatos, como pinos no mapa. */
   pontos: PontoMapa[]
   carregou: boolean
@@ -44,18 +26,8 @@ interface HeroPortalProps {
 // Topo da landing: as palavras enormes e, entre elas, uma janela em cápsula
 // com o Recife vivo em 3D. Ao rolar, a janela se abre até a cidade ocupar a
 // tela inteira — a pessoa "entra" na cidade.
-export default function HeroPortal({ relatos, pontos, carregou, totais, pronto }: HeroPortalProps) {
+export default function HeroPortal({ pontos, carregou, totais, pronto }: HeroPortalProps) {
   const secao = useRef<HTMLElement>(null)
-  const mx = useMotionValue(0)
-  const my = useMotionValue(0)
-  const sx = useSpring(mx, { stiffness: 60, damping: 18 })
-  const sy = useSpring(my, { stiffness: 60, damping: 18 })
-
-  function mover(e: PointerEvent<HTMLElement>) {
-    if (e.pointerType !== 'mouse') return
-    mx.set(e.clientX / window.innerWidth - 0.5)
-    my.set(e.clientY / window.innerHeight - 0.5)
-  }
 
   // Rolagem: a janela abre, as palavras saem para os lados, a cidade fica.
   useGSAP(
@@ -105,7 +77,6 @@ export default function HeroPortal({ relatos, pontos, carregou, totais, pronto }
             )
             .to('[data-linha="1"]', { xPercent: -60, opacity: 0, duration: 0.7 }, 0)
             .to('[data-linha="2"]', { xPercent: 60, opacity: 0, duration: 0.7 }, 0)
-            .to('[data-cartoes]', { y: '-35vh', opacity: 0, duration: 0.55 }, 0)
             .to('[data-rodape-hero]', { y: 40, opacity: 0, duration: 0.3 }, 0)
             .fromTo('[data-dentro]', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.35 }, 0.7)
         },
@@ -128,17 +99,6 @@ export default function HeroPortal({ relatos, pontos, carregou, totais, pronto }
         .timeline({ defaults: { ease: 'expo.out' } })
         .from('[data-janela-escala]', { scaleY: 0, duration: 1.4, ease: 'expo.inOut' }, 0)
         .from(linhas.chars, { yPercent: 120, duration: 1.2, stagger: 0.035 }, 0.35)
-        .from(
-          '[data-cartao-in]',
-          {
-            scale: 0,
-            opacity: 0,
-            duration: 0.9,
-            stagger: 0.1,
-            ease: 'back.out(2)',
-          },
-          0.9,
-        )
         .from('[data-rodape-hero] > *', { y: 24, opacity: 0, stagger: 0.08, duration: 0.8 }, 1)
       return () => linhas.revert()
     },
@@ -146,7 +106,7 @@ export default function HeroPortal({ relatos, pontos, carregou, totais, pronto }
   )
 
   return (
-    <section ref={secao} onPointerMove={mover} className="relative h-[100svh] overflow-hidden bg-grafite-50">
+    <section ref={secao} className="relative h-[100svh] overflow-hidden bg-grafite-50">
       {/* A cidade, vista pela janela */}
       <div data-janela-escala className="absolute inset-0">
         <div data-janela className="absolute inset-0 overflow-hidden rounded-[50%] bg-[#9fd3d6] will-change-transform">
@@ -171,13 +131,6 @@ export default function HeroPortal({ relatos, pontos, carregou, totais, pronto }
           <span data-letras>tem voz.</span>
         </span>
       </h1>
-
-      {/* Relatos reais flutuando em volta */}
-      <div data-cartoes className="pointer-events-none absolute inset-0 z-10 will-change-transform">
-        {relatos.slice(0, LUGARES.length).map((r, i) => (
-          <CartaoFlutuante key={r.id} relato={r} lugar={LUGARES[i]} sx={sx} sy={sy} indice={i} />
-        ))}
-      </div>
 
       {/* Rodapé do topo */}
       <div
@@ -226,58 +179,5 @@ export default function HeroPortal({ relatos, pontos, carregou, totais, pronto }
         </div>
       </div>
     </section>
-  )
-}
-
-function CartaoFlutuante({
-  relato,
-  lugar,
-  sx,
-  sy,
-  indice,
-}: {
-  relato: RelatoVitrine
-  lugar: (typeof LUGARES)[number]
-  sx: MotionValue<number>
-  sy: MotionValue<number>
-  indice: number
-}) {
-  const x = useTransform(sx, (v) => v * 70 * lugar.fundo)
-  const y = useTransform(sy, (v) => v * 50 * lugar.fundo)
-  const cor = rgb(CATEGORIA_RGB[relato.categoria as Categoria])
-  const categoria = CATEGORIAS.find((c) => c.value === relato.categoria)?.label ?? relato.categoria
-
-  return (
-    <div data-cartao className={`absolute hidden md:block ${lugar.classe}`}>
-      <div data-cartao-in>
-        <motion.div style={{ x, y }}>
-          <div
-            className="anima-continua w-60 rounded-[22px] bg-white p-4 shadow-[0_24px_50px_-24px_rgba(27,24,19,0.55)] ring-1 ring-grafite-200"
-            style={{ animation: `flutuar ${4 + indice}s ease-in-out infinite` }}
-          >
-            <span className="flex items-center gap-2">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-xl text-white"
-                style={{ background: cor }}
-              >
-                <IconeCategoria categoria={relato.categoria} />
-              </span>
-              <span className="text-[11px] font-bold uppercase leading-tight tracking-[0.08em]" style={{ color: cor }}>
-                {categoria}
-                <span className="block font-semibold normal-case tracking-normal text-grafite-500">
-                  {relato.bairro}
-                </span>
-              </span>
-            </span>
-            <span className="mt-2.5 block text-sm leading-snug text-grafite-900 line-clamp-2">{relato.descricao}</span>
-            {relato.interacoes > 0 && (
-              <span className="mt-2 block text-xs font-semibold text-categoria-rosa-700">
-                ♥ {relato.interacoes} {relato.interacoes === 1 ? 'apoio' : 'apoios'}
-              </span>
-            )}
-          </div>
-        </motion.div>
-      </div>
-    </div>
   )
 }
