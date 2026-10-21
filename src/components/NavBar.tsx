@@ -259,15 +259,14 @@ function MenuConta() {
 
             <div className="p-2">
               {([
-                { to: `/u/${user.id}`, rotulo: 'Meu perfil público', icone: ICONES.feed, mostrar: true },
+                { to: `/u/${user.id}`, rotulo: 'Meu perfil', icone: ICONES.perfil, mostrar: true },
                 {
-                  to: '/projetos?acompanhando=1',
+                  to: `/u/${user.id}?aba=acompanhando`,
                   rotulo: 'Acompanhando',
                   icone: ICONES.salvo,
                   mostrar: true,
                   contagem: salvos.length,
                 },
-                { to: '/perfil', rotulo: 'Minha conta', icone: ICONES.perfil, mostrar: true },
                 { to: '/painel', rotulo: 'Painel de gestor', icone: ICONES.painel, mostrar: ehGestor },
               ] as { to: string; rotulo: string; icone: ReactNode; mostrar: boolean; contagem?: number }[])
                 .filter((i) => i.mostrar)
@@ -347,12 +346,6 @@ export default function NavBar() {
             <span className="h-10 w-10 animate-pulse rounded-full bg-grafite-200" />
           ) : user ? (
             <>
-              <Link
-                to="/feed/novo"
-                className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-amarelo-500 px-4 py-2 text-sm font-semibold text-grafite-900 shadow-[0_8px_18px_-10px_rgba(245,184,0,0.9)] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-amarelo-300"
-              >
-                <span className="text-base leading-none">+</span> Relatar problema
-              </Link>
               <Notificacoes />
               <MenuConta />
             </>
