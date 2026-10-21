@@ -3,6 +3,8 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { useProjetosSalvos } from '../features/projetos/useProjetosSalvos'
+import Notificacoes from './Notificacoes'
 
 const Icone = ({ children }: { children: ReactNode }) => (
   <svg
@@ -44,6 +46,11 @@ const ICONES = {
     <Icone>
       <circle cx="12" cy="8" r="4" />
       <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+    </Icone>
+  ),
+  salvo: (
+    <Icone>
+      <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z" />
     </Icone>
   ),
   sair: (
@@ -142,6 +149,7 @@ function NavCentral() {
 function MenuConta() {
   const { user, profile, signOut } = useAuth()
   const ehGestor = useEhGestor()
+  const { salvos } = useProjetosSalvos()
   const navigate = useNavigate()
   const id = useId()
   const [aberto, setAberto] = useState(false)
@@ -250,11 +258,18 @@ function MenuConta() {
             </div>
 
             <div className="p-2">
-              {[
+              {([
                 { to: `/u/${user.id}`, rotulo: 'Meu perfil público', icone: ICONES.feed, mostrar: true },
+                {
+                  to: '/projetos?acompanhando=1',
+                  rotulo: 'Acompanhando',
+                  icone: ICONES.salvo,
+                  mostrar: true,
+                  contagem: salvos.length,
+                },
                 { to: '/perfil', rotulo: 'Minha conta', icone: ICONES.perfil, mostrar: true },
                 { to: '/painel', rotulo: 'Painel de gestor', icone: ICONES.painel, mostrar: ehGestor },
-              ]
+              ] as { to: string; rotulo: string; icone: ReactNode; mostrar: boolean; contagem?: number }[])
                 .filter((i) => i.mostrar)
                 .map((item, i) => (
                   <motion.div
@@ -272,7 +287,12 @@ function MenuConta() {
                       <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-grafite-100 text-grafite-700 transition-colors group-hover:bg-amarelo-500 group-hover:text-grafite-900">
                         {item.icone}
                       </span>
-                      {item.rotulo}
+                      <span className="flex-1">{item.rotulo}</span>
+                      {item.contagem !== undefined && (
+                        <span className="rounded-full bg-amarelo-100 px-2 py-0.5 text-xs font-bold text-amarelo-900">
+                          {item.contagem}
+                        </span>
+                      )}
                     </Link>
                   </motion.div>
                 ))}
@@ -305,14 +325,16 @@ export default function NavBar() {
     <header className="sticky top-0 z-[1000] h-[57px] border-b border-grafite-200/80 bg-grafite-50/85 backdrop-blur-xl">
       <div className="mx-auto grid h-full max-w-7xl grid-cols-[auto_1fr_auto] sm:grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 sm:px-5">
         <Link to="/feed" className="group flex items-center gap-2.5 justify-self-start" aria-label="Confluência — início">
-          <motion.span
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-amarelo-500"
+          <motion.img
+            src="/logo.png"
+            alt=""
+            width={34}
+            height={34}
+            className="h-[34px] w-[34px]"
             whileHover={{ rotate: -12, scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 400, damping: 12 }}
-          >
-            <span className="font-heading text-sm font-bold text-grafite-900">C</span>
-          </motion.span>
+          />
           <span className="hidden md:block font-heading text-lg font-extrabold text-grafite-900">Confluência</span>
         </Link>
 
@@ -331,6 +353,7 @@ export default function NavBar() {
               >
                 <span className="text-base leading-none">+</span> Relatar problema
               </Link>
+              <Notificacoes />
               <MenuConta />
             </>
           ) : (
