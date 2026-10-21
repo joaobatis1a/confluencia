@@ -16,7 +16,7 @@ export default function AntesDepois() {
   useGSAP(
     () => {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        gsap.set('[data-hoje]', { clipPath: 'inset(0 0% 0 0)' })
+        gsap.set(['[data-hoje]', '[data-hoje-img]'], { xPercent: 0 })
         if (ano.current) ano.current.textContent = '2026'
         return
       }
@@ -24,11 +24,13 @@ export default function AntesDepois() {
       gsap
         .timeline({
           defaults: { ease: 'none' },
-          scrollTrigger: { trigger: secao.current, start: 'top top', end: '+=160%', pin: true, scrub: 0.5 },
+          scrollTrigger: { trigger: secao.current, start: 'top top', end: '+=160%', pin: true, scrub: 0.5, invalidateOnRefresh: true },
         })
-        .fromTo('[data-antes]', { scale: 1.15 }, { scale: 1, duration: 1 }, 0)
-        .fromTo('[data-hoje]', { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: 1 }, 0)
-        .fromTo('[data-cortina]', { left: '0%' }, { left: '100%', duration: 1 }, 0)
+        // Cortina só com transform: a moldura entra da esquerda e a foto dentro
+        // anda ao contrário na mesma medida, então parece parada.
+        .fromTo('[data-hoje]', { xPercent: -100 }, { xPercent: 0, duration: 1 }, 0)
+        .fromTo('[data-hoje-img]', { xPercent: 100 }, { xPercent: 0, duration: 1 }, 0)
+        .fromTo('[data-cortina]', { x: 0 }, { x: () => window.innerWidth, duration: 1 }, 0)
         .to(
           contagem,
           {
@@ -47,14 +49,20 @@ export default function AntesDepois() {
   return (
     <section ref={secao} className="relative h-[100svh] overflow-hidden bg-grafite-900 text-white">
       <img data-antes src={par.antes.url} alt={par.antes.legenda} className="absolute inset-0 h-full w-full object-cover" />
-      <img
-        data-hoje
-        src={par.depois.url}
-        alt={par.depois.legenda}
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{ clipPath: 'inset(0 100% 0 0)' }}
+      <div data-hoje className="absolute inset-0 overflow-hidden will-change-transform" style={{ transform: 'translateX(-100%)' }}>
+        <img
+          data-hoje-img
+          src={par.depois.url}
+          alt={par.depois.legenda}
+          className="absolute inset-0 h-full w-full object-cover will-change-transform"
+          style={{ transform: 'translateX(100%)' }}
+        />
+      </div>
+      <span
+        data-cortina
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-1.5 -ml-[3px] bg-amarelo-500 shadow-[0_0_40px_rgba(245,184,0,0.9)] will-change-transform"
       />
-      <span data-cortina aria-hidden className="absolute inset-y-0 w-1.5 -translate-x-1/2 bg-amarelo-500 shadow-[0_0_40px_rgba(245,184,0,0.9)]" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/60" />
 
       <div className="relative flex h-full flex-col justify-between px-[4vw] py-[10vh]">

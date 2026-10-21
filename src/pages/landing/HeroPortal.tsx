@@ -129,7 +129,7 @@ export default function HeroPortal({ relatos, totais, pronto }: HeroPortalProps)
     <section ref={secao} onPointerMove={mover} className="relative h-[100svh] overflow-hidden bg-grafite-50">
       {/* A cidade, vista pela janela */}
       <div data-janela-escala className="absolute inset-0">
-        <div data-janela className="absolute inset-0 bg-[#9fd3d6]">
+        <div data-janela className="absolute inset-0 bg-[#9fd3d6] [will-change:clip-path]">
           <MapaCidade pontos={relatos} />
           <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_rgba(27,24,19,0.18)]" />
         </div>
@@ -139,20 +139,20 @@ export default function HeroPortal({ relatos, totais, pronto }: HeroPortalProps)
       <h1 className="pointer-events-none absolute inset-0 font-heading font-extrabold leading-[0.82] tracking-[-0.04em] text-grafite-900">
         <span
           data-linha="1"
-          className="absolute left-[4vw] top-[14vh] block text-[clamp(4rem,13vw,15rem)] md:top-[11vh]"
+          className="absolute will-change-transform left-[4vw] top-[14vh] block text-[clamp(4rem,13vw,15rem)] md:top-[11vh]"
         >
           <span data-letras>Sua cidade</span>
         </span>
         <span
           data-linha="2"
-          className="absolute bottom-[19vh] right-[4vw] block font-serif text-[clamp(4.4rem,14vw,16rem)] font-normal italic tracking-[-0.02em] md:bottom-[13vh]"
+          className="absolute will-change-transform bottom-[19vh] right-[4vw] block font-serif text-[clamp(4.4rem,14vw,16rem)] font-normal italic tracking-[-0.02em] md:bottom-[13vh]"
         >
           <span data-letras>tem voz.</span>
         </span>
       </h1>
 
       {/* Relatos reais flutuando em volta */}
-      <div data-cartoes className="pointer-events-none absolute inset-0 z-10">
+      <div data-cartoes className="pointer-events-none absolute inset-0 z-10 will-change-transform">
         {relatos.slice(0, LUGARES.length).map((r, i) => (
           <CartaoFlutuante key={r.id} relato={r} lugar={LUGARES[i]} sx={sx} sy={sy} indice={i} />
         ))}
@@ -192,7 +192,7 @@ export default function HeroPortal({ relatos, totais, pronto }: HeroPortalProps)
         data-dentro
         className="pointer-events-none absolute inset-0 flex items-end justify-center pb-[8vh] opacity-0"
       >
-        <div className="pointer-events-auto mx-4 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-[28px] bg-white/85 px-6 py-4 shadow-[0_30px_60px_-30px_rgba(27,24,19,0.6)] backdrop-blur-xl">
+        <div className="pointer-events-auto mx-4 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-[28px] bg-white px-6 py-4 shadow-[0_30px_60px_-30px_rgba(27,24,19,0.6)]">
           <p className="font-heading text-xl font-extrabold text-grafite-900 sm:text-2xl">
             Este é o Recife <span className="font-serif font-normal italic text-amarelo-700">agora.</span>
           </p>
@@ -230,14 +230,9 @@ function CartaoFlutuante({
     <div data-cartao className={`absolute hidden md:block ${lugar.classe}`}>
       <div data-cartao-in>
         <motion.div style={{ x, y }}>
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{
-              duration: 4 + indice,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-            className="w-60 rounded-[22px] bg-white p-4 shadow-[0_24px_50px_-24px_rgba(27,24,19,0.55)] ring-1 ring-grafite-200"
+          <div
+            className="anima-continua w-60 rounded-[22px] bg-white p-4 shadow-[0_24px_50px_-24px_rgba(27,24,19,0.55)] ring-1 ring-grafite-200"
+            style={{ animation: `flutuar ${4 + indice}s ease-in-out infinite` }}
           >
             <span className="flex items-center gap-2">
               <span
@@ -259,7 +254,7 @@ function CartaoFlutuante({
                 ♥ {relato.interacoes} {relato.interacoes === 1 ? 'apoio' : 'apoios'}
               </span>
             )}
-          </motion.div>
+          </div>
         </motion.div>
       </div>
     </div>

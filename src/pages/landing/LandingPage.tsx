@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -7,8 +7,6 @@ import { SplitText } from 'gsap/SplitText'
 import { useGSAP } from '@gsap/react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { CONTAS_DEMO, SENHA_DEMO } from '../../lib/contasDemo'
-import Marquee from '../../components/Marquee'
 import Contador from '../../components/Contador'
 import { MOCK_PROJETOS } from '../../features/projetos/mock'
 import { FOTOS_PROJETO } from '../../features/projetos/fotos'
@@ -20,6 +18,7 @@ import Manifesto from './Manifesto'
 import ComoFunciona from './ComoFunciona'
 import AntesDepois from './AntesDepois'
 import Magnetico from './Magnetico'
+import Crachas from './Crachas'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText)
 
@@ -95,9 +94,7 @@ export default function LandingPage() {
     apoios: relatos.reduce((s, r) => s + r.interacoes, 0),
     bairros: new Set(relatos.map((r) => r.bairro)).size,
   }
-  const frases = vitrine
-    .slice(0, 8)
-    .map((r) => `${r.bairro} — ${r.descricao.length > 56 ? `${r.descricao.slice(0, 56)}…` : r.descricao}`)
+
 
   return (
     <div className="overflow-x-clip bg-grafite-50">
@@ -105,25 +102,6 @@ export default function LandingPage() {
       <NavLanding />
 
       <HeroPortal relatos={vitrine} totais={totais} pronto={!abertura} />
-
-      {/* Duas faixas cruzadas, como fitas coladas na página */}
-      <div className="relative z-10 -my-6 py-14">
-        <div className="-mx-10 -rotate-[2.5deg] border-y-2 border-grafite-900 bg-amarelo-500 py-4">
-          <Marquee
-            itens={frases.length ? frases : ['Relate', 'Apoie', 'Vote', 'Acompanhe']}
-            duracao={45}
-            className="font-heading text-xl font-extrabold uppercase tracking-tight text-grafite-900 sm:text-3xl"
-          />
-        </div>
-        <div className="-mx-10 -mt-3 rotate-[1.8deg] border-y-2 border-grafite-900 bg-white py-3">
-          <Marquee
-            itens={['Relate', 'Apoie', 'Vote', 'Acompanhe', 'Recife tem voz']}
-            duracao={30}
-            reverso
-            className="font-serif text-2xl italic text-grafite-900 sm:text-4xl"
-          />
-        </div>
-      </div>
 
       <Manifesto />
 
@@ -135,7 +113,7 @@ export default function LandingPage() {
 
       <Colagem />
 
-      <FormasDeEntrar />
+      <Crachas />
 
       <Final />
     </div>
@@ -353,90 +331,6 @@ function Colagem() {
             </motion.figure>
           ))}
         </div>
-      </div>
-    </section>
-  )
-}
-
-// Três formas de conhecer o sistema: sem conta, como cidadã ou como gestor.
-function FormasDeEntrar() {
-  const { signIn } = useAuth()
-  const navigate = useNavigate()
-  const [entrando, setEntrando] = useState<string | null>(null)
-  const [erro, setErro] = useState<string | null>(null)
-
-  async function entrar(email: string) {
-    setEntrando(email)
-    setErro(null)
-    const { error } = await signIn(email, SENHA_DEMO)
-    setEntrando(null)
-    if (error) {
-      setErro('Não foi possível entrar com a conta de demonstração agora. Tente pela tela de login.')
-      return
-    }
-    navigate('/feed')
-  }
-
-  const cartoes = [
-    {
-      titulo: 'Visitante',
-      texto: 'Explore o mapa, os relatos e os projetos sem criar conta.',
-      acao: () => navigate('/feed'),
-      rotulo: 'Explorar sem conta',
-      estilo: 'bg-white text-grafite-900 border border-grafite-200',
-      chave: 'visitante',
-    },
-    {
-      titulo: CONTAS_DEMO.cidada.papel,
-      texto: `Entre como ${CONTAS_DEMO.cidada.nome}: relate, apoie, comente e vote.`,
-      acao: () => entrar(CONTAS_DEMO.cidada.email),
-      rotulo: 'Entrar como cidadã',
-      estilo: 'bg-amarelo-500 text-grafite-900',
-      chave: CONTAS_DEMO.cidada.email,
-    },
-    {
-      titulo: CONTAS_DEMO.gestor.papel,
-      texto: `Entre como ${CONTAS_DEMO.gestor.nome}: responda relatos e publique projetos.`,
-      acao: () => entrar(CONTAS_DEMO.gestor.email),
-      rotulo: 'Entrar como gestor',
-      estilo: 'bg-status-azul-700 text-white',
-      chave: CONTAS_DEMO.gestor.email,
-    },
-  ]
-
-  return (
-    <section className="bg-grafite-100 py-24">
-      <div className="mx-auto max-w-7xl px-6 sm:px-10">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-amarelo-700">Experimente agora</p>
-        <h2 className="mt-4 max-w-3xl font-heading text-5xl font-extrabold leading-[0.95] text-grafite-900 sm:text-6xl">
-          Veja o sistema <span className="font-serif font-normal italic text-amarelo-700">pelos olhos de cada um</span>
-        </h2>
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {cartoes.map((c, i) => (
-            <motion.button
-              key={c.chave}
-              type="button"
-              onClick={c.acao}
-              disabled={entrando !== null}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              whileHover={{ y: -6, rotate: i === 1 ? 0 : i === 0 ? -1 : 1 }}
-              className={`flex min-h-64 flex-col justify-between rounded-[32px] p-8 text-left shadow-[0_24px_50px_-30px_rgba(27,24,19,0.5)] disabled:opacity-70 ${c.estilo}`}
-            >
-              <span>
-                <span className="text-xs font-bold uppercase tracking-[0.16em] opacity-70">Conta {i + 1}</span>
-                <span className="mt-2 block font-heading text-4xl font-extrabold">{c.titulo}</span>
-                <span className="mt-3 block opacity-80">{c.texto}</span>
-              </span>
-              <span className="mt-8 inline-flex items-center gap-2 font-bold">
-                {entrando === c.chave ? 'Entrando…' : c.rotulo} →
-              </span>
-            </motion.button>
-          ))}
-        </div>
-        {erro && <p className="mt-4 text-sm text-status-vermelho-700">{erro}</p>}
       </div>
     </section>
   )

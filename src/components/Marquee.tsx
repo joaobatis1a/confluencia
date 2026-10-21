@@ -1,5 +1,3 @@
-import { motion, useReducedMotion } from 'framer-motion'
-
 interface MarqueeProps {
   itens: string[]
   /** Segundos para uma volta completa. */
@@ -9,9 +7,9 @@ interface MarqueeProps {
 }
 
 // Faixa de texto que corre sem parar (o conteúdo é duplicado para o loop
-// ficar contínuo). Para quem prefere menos movimento, fica parada.
+// ficar contínuo). A animação é CSS, no compositor; para quem prefere menos
+// movimento, fica parada.
 export default function Marquee({ itens, duracao = 28, reverso = false, className = '' }: MarqueeProps) {
-  const reduzir = useReducedMotion()
   const faixa = (
     <span className="flex shrink-0 items-center">
       {itens.map((item, i) => (
@@ -25,15 +23,14 @@ export default function Marquee({ itens, duracao = 28, reverso = false, classNam
 
   return (
     <div className={`overflow-hidden whitespace-nowrap ${className}`} aria-label={itens.join(' · ')}>
-      <motion.div
+      <div
         aria-hidden
-        className="flex w-max"
-        animate={reduzir ? undefined : { x: reverso ? ['-50%', '0%'] : ['0%', '-50%'] }}
-        transition={{ duration: duracao, ease: 'linear', repeat: Infinity }}
+        className="anima-continua flex w-max will-change-transform"
+        style={{ animation: `${reverso ? 'marquee-reverso' : 'marquee'} ${duracao}s linear infinite` }}
       >
         {faixa}
         {faixa}
-      </motion.div>
+      </div>
     </div>
   )
 }
