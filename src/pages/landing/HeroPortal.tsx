@@ -1,10 +1,14 @@
-import { useRef } from 'react'
+import { lazy, Suspense, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SplitText } from 'gsap/SplitText'
 import { useGSAP } from '@gsap/react'
-import MapaCidade, { type PontoMapa } from './MapaCidade'
+import type { PontoMapa } from './MapaCidade'
+
+// O mapa (MapLibre) é o pedaço mais pesado da landing: carrega à parte, para o
+// título aparecer sem esperar por ele.
+const MapaCidade = lazy(() => import('./MapaCidade'))
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText)
 
@@ -108,7 +112,9 @@ export default function HeroPortal({ pontos, carregou, totais, pronto }: HeroPor
       <div data-janela-escala className="absolute inset-0">
         <div data-janela className="absolute inset-0 overflow-hidden rounded-[50%] bg-[#9fd3d6] will-change-transform">
           <div data-janela-dentro className="absolute inset-0 will-change-transform">
-            <MapaCidade pontos={pontos} carregou={carregou} />
+            <Suspense fallback={null}>
+              <MapaCidade pontos={pontos} carregou={carregou} />
+            </Suspense>
           </div>
         </div>
       </div>

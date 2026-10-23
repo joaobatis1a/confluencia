@@ -1,21 +1,24 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
-import FeedPage from './features/feed/pages/FeedPage'
-import CreatePostPage from './features/feed/pages/CreatePostPage'
-import PostDetailPage from './features/feed/pages/PostDetailPage'
-import ProjetosPage from './features/projetos/pages/ProjetosPage'
-import ProjetoDetailPage from './features/projetos/pages/ProjetoDetailPage'
-import PainelGestorPage from './features/projetos/pages/PainelGestorPage'
-import CriarProjetoPage from './features/projetos/pages/CriarProjetoPage'
-import LoginPage from './pages/auth/LoginPage'
-import PerfilPage from './pages/perfil/PerfilPage'
-import PerfilPublicoPage from './features/feed/pages/PerfilPublicoPage'
 import RequireInstitutional from './components/RequireInstitutional'
 import PageTransition from './components/PageTransition'
 import NavBar from './components/NavBar'
 import BotaoRelatar from './components/BotaoRelatar'
-import LandingPage from './pages/landing/LandingPage'
+
+// Cada página vira um pedaço separado do JavaScript, baixado só quando é aberta:
+// quem chega pela landing não precisa baixar o mapa 3D do Feed, e vice-versa.
+const LandingPage = lazy(() => import('./pages/landing/LandingPage'))
+const FeedPage = lazy(() => import('./features/feed/pages/FeedPage'))
+const CreatePostPage = lazy(() => import('./features/feed/pages/CreatePostPage'))
+const PostDetailPage = lazy(() => import('./features/feed/pages/PostDetailPage'))
+const PerfilPublicoPage = lazy(() => import('./features/feed/pages/PerfilPublicoPage'))
+const ProjetosPage = lazy(() => import('./features/projetos/pages/ProjetosPage'))
+const ProjetoDetailPage = lazy(() => import('./features/projetos/pages/ProjetoDetailPage'))
+const PainelGestorPage = lazy(() => import('./features/projetos/pages/PainelGestorPage'))
+const CriarProjetoPage = lazy(() => import('./features/projetos/pages/CriarProjetoPage'))
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
+const PerfilPage = lazy(() => import('./pages/perfil/PerfilPage'))
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -78,7 +81,9 @@ function App() {
     <div className="min-h-screen bg-grafite-50">
       <VoltarAoTopo />
       {!naLanding && <NavBar />}
-      <AnimatedRoutes />
+      <Suspense fallback={<div className="min-h-[100svh] bg-grafite-50" />}>
+        <AnimatedRoutes />
+      </Suspense>
       <BotaoRelatar />
     </div>
   )
