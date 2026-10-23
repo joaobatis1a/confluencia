@@ -5,7 +5,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SplitText } from 'gsap/SplitText'
 import { useGSAP } from '@gsap/react'
 import MapaCidade, { type PontoMapa } from './MapaCidade'
-import Magnetico from './Magnetico'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText)
 
@@ -77,7 +76,6 @@ export default function HeroPortal({ pontos, carregou, totais, pronto }: HeroPor
             )
             .to('[data-linha="1"]', { xPercent: -60, opacity: 0, duration: 0.7 }, 0)
             .to('[data-linha="2"]', { xPercent: 60, opacity: 0, duration: 0.7 }, 0)
-            .to('[data-rodape-hero]', { y: 40, opacity: 0, duration: 0.3 }, 0)
             .fromTo('[data-dentro]', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.35 }, 0.7)
         },
       )
@@ -99,7 +97,6 @@ export default function HeroPortal({ pontos, carregou, totais, pronto }: HeroPor
         .timeline({ defaults: { ease: 'expo.out' } })
         .from('[data-janela-escala]', { scaleY: 0, duration: 1.4, ease: 'expo.inOut' }, 0)
         .from(linhas.chars, { yPercent: 120, duration: 1.2, stagger: 0.035 }, 0.35)
-        .from('[data-rodape-hero] > *', { y: 24, opacity: 0, stagger: 0.08, duration: 0.8 }, 1)
       return () => linhas.revert()
     },
     { scope: secao, dependencies: [pronto] },
@@ -131,35 +128,6 @@ export default function HeroPortal({ pontos, carregou, totais, pronto }: HeroPor
           <span data-letras>tem voz.</span>
         </span>
       </h1>
-
-      {/* Rodapé do topo */}
-      <div
-        data-rodape-hero
-        className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-5 px-[4vw] pb-[4vh]"
-      >
-        <p className="max-w-xs text-[15px] leading-snug text-grafite-700">
-          <span className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-amarelo-700">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-status-verde-500" /> Recife, agora
-          </span>
-          Relate o que vê na rua, apoie vizinhos, vote nos projetos e acompanhe cada obra até a entrega.
-        </p>
-        <div className="flex items-center gap-3">
-          <span className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-grafite-500 lg:block">
-            Role para entrar ↓
-          </span>
-          <Magnetico>
-            <Link
-              to="/feed"
-              className="group inline-flex items-center gap-3 rounded-full bg-amarelo-500 py-2 pl-6 pr-2 text-base font-bold text-grafite-900 shadow-[0_18px_40px_-16px_rgba(245,184,0,0.9)]"
-            >
-              Entrar no Confluência
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white transition-transform duration-300 group-hover:rotate-[-45deg]">
-                →
-              </span>
-            </Link>
-          </Magnetico>
-        </div>
-      </div>
 
       {/* O que aparece quando a janela termina de abrir */}
       <div
