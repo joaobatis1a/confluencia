@@ -321,7 +321,7 @@ export default function NavBar() {
   const { user, loading } = useAuth()
 
   return (
-    <header className="sticky top-0 z-[1000] h-[57px] border-b border-grafite-200/80 bg-grafite-50/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-[1000] h-[57px] border-b border-grafite-200/80 bg-grafite-50">
       <div className="mx-auto grid h-full max-w-7xl grid-cols-[auto_1fr_auto] sm:grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 sm:px-5">
         <Link to="/feed" className="group flex items-center gap-2.5 justify-self-start" aria-label="Confluência — início">
           <motion.img

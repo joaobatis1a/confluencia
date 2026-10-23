@@ -73,7 +73,7 @@ const GavetaMobile = forwardRef<GavetaMobileHandle, GavetaMobileProps>(function 
         dragElastic={0.06}
         onDragEnd={soltar}
         style={{ y, height: alturaVisivel }}
-        className="pointer-events-auto absolute inset-x-0 top-0 flex flex-col overflow-hidden rounded-t-[28px] border-t border-white/70 bg-grafite-50/95 shadow-[0_-18px_50px_-20px_rgba(27,24,19,0.45)] backdrop-blur-xl"
+        className="pointer-events-auto absolute inset-x-0 top-0 flex flex-col overflow-hidden rounded-t-[28px] border-t border-white/70 bg-grafite-50 shadow-[0_-18px_50px_-20px_rgba(27,24,19,0.45)]"
       >
         <div onPointerDown={(e) => controles.start(e)} className="cursor-grab touch-none select-none active:cursor-grabbing">
           <div className="flex justify-center pt-2.5 pb-1">
