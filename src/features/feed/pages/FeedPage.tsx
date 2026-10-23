@@ -351,7 +351,7 @@ export default function FeedPage() {
           </AnimatePresence>
           {grupos.map((grupo) => (
             <section key={grupo.titulo}>
-              <h2 className="sticky top-0 z-10 -mx-4 mb-2 flex items-center gap-3 bg-grafite-50/90 px-5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-grafite-500 backdrop-blur">
+              <h2 className="sticky top-0 z-10 -mx-4 mb-2 flex items-center gap-3 bg-grafite-50 px-5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-grafite-500">
                 {grupo.titulo}
                 <span className="h-px flex-1 bg-grafite-200" />
                 <span className="font-semibold normal-case tracking-normal">{grupo.itens.length}</span>
@@ -400,7 +400,7 @@ export default function FeedPage() {
       {desktop ? (
         <aside
           data-anim="painel"
-          className="absolute z-10 left-5 top-5 bottom-5 w-[470px] flex flex-col overflow-hidden rounded-[28px] border border-white/70 bg-grafite-50/85 shadow-[0_30px_70px_-25px_rgba(27,24,19,0.45)] backdrop-blur-xl"
+          className="absolute z-10 left-5 top-5 bottom-5 w-[470px] flex flex-col overflow-hidden rounded-[28px] border border-white/70 bg-grafite-50 shadow-[0_30px_70px_-25px_rgba(27,24,19,0.45)]"
         >
           <header className="px-6 pt-6 pb-4">
             {titulo}

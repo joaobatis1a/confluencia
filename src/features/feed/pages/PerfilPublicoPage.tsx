@@ -301,7 +301,7 @@ function AbasEditoriais({
   onTrocar: (a: Aba) => void
 }) {
   return (
-    <div className="sticky top-[57px] z-30 mt-12 border-y border-grafite-200 bg-grafite-50/90 backdrop-blur-xl">
+    <div className="sticky top-[57px] z-30 mt-12 border-y border-grafite-200 bg-grafite-50">
       <div
         role="tablist"
         aria-label="Seções do perfil"
