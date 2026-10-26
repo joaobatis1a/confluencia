@@ -33,6 +33,8 @@ Roteiro para a conversa Ana + Guilherme antes de aplicar as migrations no Supaba
 
 > **Status (João, PR da votação):** o item 5 já está resolvido no app — o voto tenta inserir direto e trata o erro `23505` como "já votou" (ver `src/features/projetos/pages/ProjetoDetailPage.tsx`), e o item 6 também já é tratado (ausência de linha vira `0/0/0`). Os itens 3 e 4 continuam em aberto — são a parte pendente do Guilherme (RLS de prazo da consulta + hash gerado no banco).
 
+> **Status (Ana, Semana 3 — migration `0006_votacao_projetos.sql`):** os itens 1, 2, 3, 4 e 5 acima passam a ter solução escrita e testada num Postgres local com o Supabase simulado (rejeitado privado, `with check` + colunas liberadas no update, função `votar` que valida status/prazo, hash gerado no banco, `meu_comprovante`). **Falta o Guilherme revisar e aplicar a `0006` no Supabase real.** O item 6 segue tratado no app.
+
 ## 3. Ordem para aplicar e testar (Tarefa 2.2)
 
 1. Guilherme cria o projeto no Supabase e roda as migrations `0001` → `0005` no SQL Editor (`supabase/README.md`).
