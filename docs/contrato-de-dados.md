@@ -108,4 +108,44 @@ Definida em `supabase/migrations/0003_projetos_votos.sql`.
 | `id` | uuid | = auth.users.id | criado automaticamente no cadastro |
 | `nome` | texto | opcional (default vazio) | o usuário pode editar o próprio nome |
 | `institucional_verificado` | booleano | sim (default false) | aprovação manual pelo Guilherme no painel do Supabase; o usuário não consegue alterar |
-| `orgao_nome` | texto | não | só alterado pelo painel do Supabase |
+| `orgao_nome` | texto | não | só alterado pelo painel do Supabase || `apelido` | texto | não (0006) | único, 3–20 caracteres `[a-z0-9_.]`; é como a pessoa aparece no Feed |
+| `bairro` | texto | não (0006) | bairro do perfil público |
+| `bio` | texto | não (0006) | até 160 caracteres |
+
+## Camada social (0006_rede_social.sql — dono: João)
+
+**Anonimato:** `posts.anonimo` (booleano, default false; sempre true em `seguranca`, forçado por trigger). A coluna `posts.user_id` não é mais legível pelo público direto na tabela — leia o Feed sempre pela view `posts_repercussao`, que devolve `user_id = null` em relato anônimo (exceto para o próprio autor). A view também traz `anonimo`, `comentarios` (contagem) e `status_oficial` (última resposta do órgão).
+
+### `comentarios`
+
+| Campo | Tipo | Obrigatório | Observação |
+|---|---|---|---|
+| `id` | uuid | automático | |
+| `post_id` | uuid | sim | apagado junto com o relato |
+| `user_id` | uuid | sim | = profiles.id do autor (o próprio usuário logado) |
+| `texto` | texto | sim | 1–500 caracteres |
+| `created_at` | data/hora | automático | |
+
+Leitura pública; comentar exige login; só o autor apaga o próprio.
+
+### `respostas_oficiais`
+
+| Campo | Tipo | Obrigatório | Observação |
+|---|---|---|---|
+| `id` | uuid | automático | |
+| `post_id` | uuid | sim | relato respondido |
+| `orgao_id` | uuid | sim | conta institucional verificada (RLS garante) |
+| `status` | enum | sim | recebido, em_analise, virou_projeto, resolvido, nao_procede |
+| `texto` | texto | sim | 1–600 caracteres, público |
+| `projeto_id` | uuid | não | projeto criado a partir do relato |
+| `created_at` | data/hora | automático | |
+
+### `bairros_seguidos`
+
+| Campo | Tipo | Obrigatório | Observação |
+|---|---|---|---|
+| `user_id` | uuid | sim | chave composta com `bairro` |
+| `bairro` | texto | sim | |
+| `created_at` | data/hora | automático | |
+
+Cada pessoa só vê e altera os próprios bairros seguidos.

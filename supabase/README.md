@@ -24,5 +24,9 @@ npx supabase db push
 | `0005_repercussao.sql` | tabela `post_apoios` + view `posts_repercussao` | Guilherme 2.3 |
 | `0006_votacao.sql` | função `registrar_voto()` (hash no servidor), `meu_comprovante()`, view `comprovantes_publicos`; fecha o insert direto em `votos` | Guilherme 3.1 |
 | `0007_votacao_projetos.sql` | função `votar()` (valida prazo/status e gera o hash no banco), `meu_comprovante()`, `verificar_comprovante()`, projeto rejeitado privado, update de projeto só nas colunas de gestão | Ana 3.3 + Guilherme 3.1 |
+| `0008_rede_social.sql` | camada social do Feed: apelido/bairro/bio no perfil, relato anônimo, `comentarios`, `respostas_oficiais`, `bairros_seguidos`, `notificacoes` | João (repaginada) |
+| `0009_fechar_autor.sql` | fecha a leitura do autor em `posts` (o anonimato passa a valer no banco). Rode por último, quando o app já estiver lendo pela view `posts_repercussao` | João (repaginada) |
+
+**Dados de exemplo (opcionais, rode depois das migrations):** `seed_projetos.sql` (projetos, troque `SEU_EMAIL`), `seed-social-demo.sql` (comentários, respostas oficiais e notificações das contas demo).
 
 Depois de aplicar, copie a **Project URL** e a **anon public key** (Project Settings → API) para o seu `.env.local` (veja `.env.example` na raiz do repo).
