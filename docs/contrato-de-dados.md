@@ -74,6 +74,20 @@ Observação: a janela de 30 dias conta a partir de hoje, não da data do própr
 
 O banco bloqueia voto duplicado (`unique (projeto_id, user_id)`): o segundo voto do mesmo usuário no mesmo projeto é rejeitado. Ninguém consegue ler a tabela `votos` diretamente, nem o próprio voto.
 
+**Ninguém insere em `votos` direto** (migration `0007`): o voto é registrado pela função `votar`, e o `hash_comprovante` é gerado no banco, não no app.
+
+### Funções de votação (migration `0007_votacao_projetos.sql`)
+
+| Função | Quem pode | O que faz |
+|---|---|---|
+| `votar(p_projeto_id uuid, p_opcao text)` → `text` | logado | Valida login, opção, status `em_consulta` e prazo (`consulta_fim`); grava o voto e devolve o hash do comprovante (64 caracteres). |
+| `meu_comprovante(p_projeto_id uuid)` → `text` | logado | Hash do próprio voto, ou `null` se ainda não votou. Nunca devolve a opção. É como a tela sabe "já votou". |
+| `verificar_comprovante(p_hash text)` → `(projeto_id, created_at)` | qualquer um | Auditoria: confere que o comprovante existe (mínimo 16 caracteres) e devolve só projeto e data/hora. |
+
+Erros de `votar` (campo `code` do erro do Supabase): `23505` já votou · `CF001` projeto não está em consulta · `CF002` prazo encerrado · `28000` sem login · `22023` opção inválida.
+
+Visibilidade: projeto com status `rejeitado` só é lido (e só tem resultado/comprovante verificável) pelo próprio órgão dono. O órgão dono só consegue editar `nome`, `descricao`, `categoria`, `status`, `timeline` e `consulta_fim`.
+
 ## View `votos_resultado` (leitura do resultado da votação)
 
 Única forma de ler o resultado. Só números agregados, nunca o voto individual. Nunca consulte `votos` diretamente para mostrar resultado.
