@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { MOCK_PROJETOS } from '../mock'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../context/AuthContext'
-import { gerarHashComprovante } from '../../../lib/votoHash'
 import { Button, Card } from '../../../components/ui'
 import CategoryBadge from '../../../components/CategoryBadge'
 import StatusDestaque from '../components/StatusDestaque'
@@ -12,15 +11,14 @@ import VotoBar from '../components/VotoBar'
 import type { VotosResultado } from '../../../types/database'
 
 // Tarefa 3.1 da Ana (Semana 3): tela completa com timeline.
-// Tarefa 3.1 do João ("apoio nas telas de votação"): registro real do voto —
-// insere em `votos` com hash gerado no cliente (ver src/lib/votoHash.ts) e lê
-// o resultado agregado de `votos_resultado`. O bloqueio de voto duplicado é
-// garantido pelo UNIQUE(projeto_id, user_id) do banco (0003_projetos_votos.sql):
-// uma segunda tentativa retorna violação de unicidade, tratada abaixo como
-// "você já votou". O projeto em si (`MOCK_PROJETOS`) ainda é mock — conectar
-// `projetos` ao Supabase real é a Tarefa 3.1 da Ana (branch
-// feature/projetos-dados-reais); a votação já funciona de verdade com
-// qualquer projeto que exista na tabela.
+// Tarefa 3.1 do Guilherme: o voto é registrado pela função `registrar_voto`
+// (hash gerado no servidor, ver supabase/migrations/0006_votacao.sql) e o
+// resultado agregado é lido de `votos_resultado`. O bloqueio de voto duplicado
+// é garantido pelo UNIQUE(projeto_id, user_id) do banco: uma segunda tentativa
+// retorna o erro `ja_votou`, tratado abaixo como "você já votou". O projeto em
+// si (`MOCK_PROJETOS`) ainda é mock — conectar `projetos` ao Supabase real é a
+// Tarefa 3.1 da Ana (branch feature/projetos-dados-reais); a votação só
+// funciona de verdade com projetos que existam na tabela e estejam em consulta.
 export default function ProjetoDetailPage() {
   const { id } = useParams()
   const { user } = useAuth()
@@ -70,27 +68,32 @@ export default function ProjetoDetailPage() {
     }
     setVotando(true)
     setErroVoto(null)
-    const hash = await gerarHashComprovante(projetoId!, user.id)
-    const { error } = await supabase.from('votos').insert({
-      projeto_id: projetoId,
-      user_id: user.id,
-      opcao,
-      hash_comprovante: hash,
+
+    // O hash é gerado no servidor pela função registrar_voto (migration 0006).
+    const { data: hash, error } = await supabase.rpc('registrar_voto', {
+      p_projeto_id: projetoId,
+      p_opcao: opcao,
     })
     setVotando(false)
 
     if (error) {
-      // 23505 = unique_violation (UNIQUE(projeto_id, user_id) da 0003_projetos_votos.sql)
-      if (error.code === '23505') {
+      const msg = error.message ?? ''
+      if (msg.includes('ja_votou')) {
         setJaVotou(true)
+      } else if (msg.includes('votacao_encerrada')) {
+        setErroVoto('A votação deste projeto está encerrada.')
+      } else if (msg.includes('login_necessario')) {
+        setErroVoto('Entre com sua conta para votar.')
+      } else if (msg.includes('projeto_inexistente')) {
+        setErroVoto('Projeto não encontrado.')
       } else {
-        setErroVoto(`Não foi possível registrar o voto: ${error.message}`)
+        setErroVoto(`Não foi possível registrar o voto: ${msg}`)
       }
       return
     }
 
     setVoto(opcao)
-    setComprovante(hash.slice(0, 16))
+    setComprovante((hash as string).slice(0, 16))
     setResultado((prev) => ({
       projeto_id: projetoId!,
       votos_favor: (prev?.votos_favor ?? 0) + (opcao === 'favor' ? 1 : 0),
