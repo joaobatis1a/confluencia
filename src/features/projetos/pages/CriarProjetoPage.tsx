@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { isSupabaseConfigured, supabase } from '../../../lib/supabase'
@@ -18,8 +18,9 @@ import {
 // Cada campo corresponde a uma coluna de `projetos` (ver docs/wireframes-projetos-perfil.md
 // e docs/contrato-de-dados.md). Protegido por RequireInstitutional em App.tsx; o RLS
 // "projetos: so institucional verificado cria" é quem garante isso de verdade.
-// --- PRÓXIMO PASSO (pendente de Supabase real) ---
-// Trocar MOCK_POSTS do select de origem pela query real de posts.
+// O select "Relato de origem" lista posts reais quando o Supabase está configurado
+// (os ids são uuid — com os ids do mock o insert falharia). Sem Supabase, usa MOCK_POSTS.
+type PostOrigem = { id: string; bairro: string; descricao: string }
 
 // Na criação, só faz sentido nascer proposto ou já em consulta; os outros
 // status mudam depois, pelo painel de gestor.
@@ -40,10 +41,27 @@ export default function CriarProjetoPage() {
   const [consultaFim, setConsultaFim] = useState('')
   const [origemPostId, setOrigemPostId] = useState('')
   const [marcos, setMarcos] = useState<MarcoForm[]>(() => [novoMarco()])
+  const [postsOrigem, setPostsOrigem] = useState<PostOrigem[]>(() => (isSupabaseConfigured ? [] : MOCK_POSTS))
   // data mínima da consulta, calculada uma vez (não a cada render)
   const [hoje] = useState(() => new Date().toISOString().slice(0, 10))
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    let cancelled = false
+    supabase
+      .from('posts')
+      .select('id, bairro, descricao')
+      .order('created_at', { ascending: false })
+      .limit(100)
+      .then(({ data }) => {
+        if (!cancelled && data) setPostsOrigem(data)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   function updateMarco(index: number, patch: Partial<MarcoForm>) {
     setMarcos((prev) => prev.map((m, i) => (i === index ? { ...m, ...patch } : m)))
@@ -193,7 +211,7 @@ export default function CriarProjetoPage() {
             <Label>Relato de origem (opcional)</Label>
             <Select value={origemPostId} onChange={(e) => setOrigemPostId(e.target.value)}>
               <option value="">Nenhum</option>
-              {MOCK_POSTS.map((p) => (
+              {postsOrigem.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.bairro} — {p.descricao.slice(0, 50)}
                 </option>

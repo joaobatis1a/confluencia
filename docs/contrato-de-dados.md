@@ -74,6 +74,20 @@ Observação: a janela de 30 dias conta a partir de hoje, não da data do própr
 
 O banco bloqueia voto duplicado (`unique (projeto_id, user_id)`): o segundo voto do mesmo usuário no mesmo projeto é rejeitado. Ninguém consegue ler a tabela `votos` diretamente, nem o próprio voto.
 
+**Ninguém insere em `votos` direto** (migration `0007`): o voto é registrado pela função `votar`, e o `hash_comprovante` é gerado no banco, não no app.
+
+### Funções de votação (migration `0007_votacao_projetos.sql`)
+
+| Função | Quem pode | O que faz |
+|---|---|---|
+| `votar(p_projeto_id uuid, p_opcao text)` → `text` | logado | Valida login, opção, status `em_consulta` e prazo (`consulta_fim`); grava o voto e devolve o hash do comprovante (64 caracteres). |
+| `meu_comprovante(p_projeto_id uuid)` → `text` | logado | Hash do próprio voto, ou `null` se ainda não votou. Nunca devolve a opção. É como a tela sabe "já votou". |
+| `verificar_comprovante(p_hash text)` → `(projeto_id, created_at)` | qualquer um | Auditoria: confere que o comprovante existe (mínimo 16 caracteres) e devolve só projeto e data/hora. |
+
+Erros de `votar` (campo `code` do erro do Supabase): `23505` já votou · `CF001` projeto não está em consulta · `CF002` prazo encerrado · `28000` sem login · `22023` opção inválida.
+
+Visibilidade: projeto com status `rejeitado` só é lido (e só tem resultado/comprovante verificável) pelo próprio órgão dono. O órgão dono só consegue editar `nome`, `descricao`, `categoria`, `status`, `timeline` e `consulta_fim`.
+
 ## View `votos_resultado` (leitura do resultado da votação)
 
 Única forma de ler o resultado. Só números agregados, nunca o voto individual. Nunca consulte `votos` diretamente para mostrar resultado.
@@ -94,4 +108,44 @@ Definida em `supabase/migrations/0003_projetos_votos.sql`.
 | `id` | uuid | = auth.users.id | criado automaticamente no cadastro |
 | `nome` | texto | opcional (default vazio) | o usuário pode editar o próprio nome |
 | `institucional_verificado` | booleano | sim (default false) | aprovação manual pelo Guilherme no painel do Supabase; o usuário não consegue alterar |
-| `orgao_nome` | texto | não | só alterado pelo painel do Supabase |
+| `orgao_nome` | texto | não | só alterado pelo painel do Supabase || `apelido` | texto | não (0006) | único, 3–20 caracteres `[a-z0-9_.]`; é como a pessoa aparece no Feed |
+| `bairro` | texto | não (0006) | bairro do perfil público |
+| `bio` | texto | não (0006) | até 160 caracteres |
+
+## Camada social (0006_rede_social.sql — dono: João)
+
+**Anonimato:** `posts.anonimo` (booleano, default false; sempre true em `seguranca`, forçado por trigger). A coluna `posts.user_id` não é mais legível pelo público direto na tabela — leia o Feed sempre pela view `posts_repercussao`, que devolve `user_id = null` em relato anônimo (exceto para o próprio autor). A view também traz `anonimo`, `comentarios` (contagem) e `status_oficial` (última resposta do órgão).
+
+### `comentarios`
+
+| Campo | Tipo | Obrigatório | Observação |
+|---|---|---|---|
+| `id` | uuid | automático | |
+| `post_id` | uuid | sim | apagado junto com o relato |
+| `user_id` | uuid | sim | = profiles.id do autor (o próprio usuário logado) |
+| `texto` | texto | sim | 1–500 caracteres |
+| `created_at` | data/hora | automático | |
+
+Leitura pública; comentar exige login; só o autor apaga o próprio.
+
+### `respostas_oficiais`
+
+| Campo | Tipo | Obrigatório | Observação |
+|---|---|---|---|
+| `id` | uuid | automático | |
+| `post_id` | uuid | sim | relato respondido |
+| `orgao_id` | uuid | sim | conta institucional verificada (RLS garante) |
+| `status` | enum | sim | recebido, em_analise, virou_projeto, resolvido, nao_procede |
+| `texto` | texto | sim | 1–600 caracteres, público |
+| `projeto_id` | uuid | não | projeto criado a partir do relato |
+| `created_at` | data/hora | automático | |
+
+### `bairros_seguidos`
+
+| Campo | Tipo | Obrigatório | Observação |
+|---|---|---|---|
+| `user_id` | uuid | sim | chave composta com `bairro` |
+| `bairro` | texto | sim | |
+| `created_at` | data/hora | automático | |
+
+Cada pessoa só vê e altera os próprios bairros seguidos.

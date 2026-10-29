@@ -1,9 +1,15 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { MOCK_PROJETOS } from '../mock'
-import { Card } from '../../../components/ui'
+import { AnimatePresence, motion } from 'framer-motion'
+import { buscarResultados, listarProjetosDoOrgao } from '../api'
+import { isSupabaseConfigured } from '../../../lib/supabase'
+import { useAuth } from '../../../context/AuthContext'
+import { MOCK_ORGAO_ID } from '../mock'
+import { hojeIso, situacaoDoMarco } from '../timeline'
+import { Button, Card } from '../../../components/ui'
 import StatusBadge from '../../../components/StatusBadge'
-import type { ProjetoStatus } from '../../../types/database'
+import AtualizacaoForm from '../components/AtualizacaoForm'
+import type { Projeto, ProjetoStatus, VotosResultado } from '../../../types/database'
 
 // Contadores do topo (wireframe, seção 4): o que o gestor precisa olhar primeiro.
 const RESUMO: { status: ProjetoStatus; label: string; cor: string }[] = [
@@ -12,10 +18,50 @@ const RESUMO: { status: ProjetoStatus; label: string; cor: string }[] = [
   { status: 'rejeitado', label: 'Rejeitados', cor: 'text-status-vermelho-700' },
 ]
 
-// Tarefa 4.2 da Ana (esqueleto na Semana 2, completo na Semana 3): painel de
-// gestor — só visível para contas institucionais verificadas (Guilherme,
-// Tarefa 3.2). Mostra todos os projetos do órgão, inclusive rejeitados.
+// Tarefa 3.2 da Ana: painel de gestor — só visível para contas institucionais
+// verificadas (RequireInstitutional em App.tsx + RLS no banco). Lista só os
+// projetos DO PRÓPRIO órgão, inclusive os rejeitados, e permite publicar
+// atualização (concluir marco / mudar status).
 export default function PainelGestorPage() {
+  const { user } = useAuth()
+  const orgaoId = isSupabaseConfigured ? user?.id : MOCK_ORGAO_ID
+  const [hoje] = useState(hojeIso)
+
+  const [projetos, setProjetos] = useState<Projeto[]>([])
+  const [resultados, setResultados] = useState<Record<string, VotosResultado>>({})
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
+  const [editando, setEditando] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!orgaoId) return
+    let cancelled = false
+    async function carregar(id: string) {
+      try {
+        const lista = await listarProjetosDoOrgao(id)
+        const res = await buscarResultados(lista.map((p) => p.id))
+        if (cancelled) return
+        setProjetos(lista)
+        setResultados(res)
+      } catch (err) {
+        if (!cancelled) setErro(err instanceof Error ? err.message : 'erro desconhecido')
+      } finally {
+        if (!cancelled) setCarregando(false)
+      }
+    }
+    carregar(orgaoId)
+    return () => {
+      cancelled = true
+    }
+  }, [orgaoId])
+
+  function aoPublicar(atualizado: Projeto) {
+    setProjetos((prev) => prev.map((p) => (p.id === atualizado.id ? atualizado : p)))
+    setEditando(null)
+    setAviso(`Atualização publicada em "${atualizado.nome}".`)
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
@@ -32,40 +78,117 @@ export default function PainelGestorPage() {
           + Novo projeto
         </Link>
       </div>
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {RESUMO.map((r) => (
-          <Card key={r.status}>
-            <p className={`font-heading text-2xl font-bold ${r.cor}`}>
-              {MOCK_PROJETOS.filter((p) => p.status === r.status).length}
-            </p>
-            <p className="text-xs text-grafite-500">{r.label}</p>
-          </Card>
-        ))}
-      </div>
-      <div className="space-y-3">
-        {MOCK_PROJETOS.map((p, i) => (
-          <motion.div
-            key={p.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <Link to={`/projetos/${p.id}`}>
-              <Card className="flex items-center justify-between gap-3 hover:border-amarelo-500 transition-colors">
-                <div>
-                  <p className="font-medium text-sm text-grafite-900">{p.nome}</p>
-                  {p.status === 'rejeitado' && (
-                    <p className="text-xs text-status-vermelho-500 mt-0.5">
-                      Rejeitado na consulta pública — não visível ao público
-                    </p>
-                  )}
-                </div>
-                <StatusBadge status={p.status} />
+
+      {erro ? (
+        <div className="rounded-[var(--radius-field)] bg-status-vermelho-50 text-status-vermelho-700 text-sm p-4">
+          Não foi possível carregar seus projetos: {erro}
+        </div>
+      ) : carregando ? (
+        <p className="text-sm text-grafite-500">Carregando projetos...</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {RESUMO.map((r) => (
+              <Card key={r.status}>
+                <p className={`font-heading text-2xl font-bold ${r.cor}`}>
+                  {projetos.filter((p) => p.status === r.status).length}
+                </p>
+                <p className="text-xs text-grafite-500">{r.label}</p>
               </Card>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
+            ))}
+          </div>
+
+          {aviso && (
+            <p
+              role="status"
+              className="rounded-[var(--radius-field)] bg-status-verde-50 text-status-verde-700 text-sm p-3 mb-4"
+            >
+              {aviso}
+            </p>
+          )}
+
+          {projetos.length === 0 ? (
+            <p className="text-sm text-grafite-500">
+              Seu órgão ainda não publicou projetos.{' '}
+              <Link to="/projetos/novo" className="font-semibold text-amarelo-700 hover:underline">
+                Publicar o primeiro
+              </Link>
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {projetos.map((p, i) => {
+                const rejeitado = p.status === 'rejeitado'
+                const res = resultados[p.id]
+                const atrasados = p.timeline.filter((m) => situacaoDoMarco(m, hoje).situacao === 'atrasado').length
+                const aberto = editando === p.id
+                return (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                  >
+                    <Card
+                      className={
+                        rejeitado ? 'border-2 !border-status-vermelho-500 !bg-status-vermelho-50' : undefined
+                      }
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <Link
+                            to={`/projetos/${p.id}`}
+                            className="font-medium text-sm text-grafite-900 hover:underline"
+                          >
+                            {p.nome}
+                          </Link>
+                          {rejeitado && (
+                            <p className="text-xs font-semibold text-status-vermelho-700 mt-1">
+                              Rejeitado, não visível ao público
+                            </p>
+                          )}
+                          <p className="text-xs text-grafite-500 mt-1">
+                            {res && res.total_votos > 0
+                              ? `${Math.round((res.votos_favor / res.total_votos) * 100)}% a favor · ${res.total_votos.toLocaleString('pt-BR')} ${
+                                  res.total_votos === 1 ? 'voto' : 'votos'
+                                }`
+                              : 'Nenhum voto registrado'}
+                            {atrasados > 0 &&
+                              ` · ${atrasados} ${atrasados === 1 ? 'marco atrasado' : 'marcos atrasados'}`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <StatusBadge status={p.status} />
+                          <Button
+                            variant="secondary"
+                            className="!px-3 !py-1.5 !text-xs"
+                            onClick={() => {
+                              setAviso(null)
+                              setEditando(aberto ? null : p.id)
+                            }}
+                          >
+                            {aberto ? 'Fechar' : 'Publicar atualização'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {aberto && (
+                          <AtualizacaoForm
+                            key={p.id}
+                            projeto={p}
+                            onPublicada={aoPublicar}
+                            onCancelar={() => setEditando(null)}
+                          />
+                        )}
+                      </AnimatePresence>
+                    </Card>
+                  </motion.div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
