@@ -1,309 +1,338 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import {
-  buscarMeuComprovante,
-  buscarProjeto,
-  buscarResultado,
-  votar as registrarVoto,
-} from '../api'
-import { isSupabaseConfigured } from '../../../lib/supabase'
-import { useAuth } from '../../../context/AuthContext'
-import { hojeIso } from '../timeline'
-import { Button, Card } from '../../../components/ui'
-import CategoryBadge from '../../../components/CategoryBadge'
-import StatusDestaque from '../components/StatusDestaque'
-import TimelineProjeto from '../components/TimelineProjeto'
-import VotoBar from '../components/VotoBar'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import gsap from 'gsap'
+import { SplitText } from 'gsap/SplitText'
+import { useGSAP } from '@gsap/react'
+import { carregarProjeto } from '../vitrine'
+import Marquee from '../../../components/Marquee'
+import Topografia from '../../../components/Topografia'
+import TextoRevelado from '../../../components/TextoRevelado'
+import Contador from '../../../components/Contador'
+import IconeCategoria from '../../feed/components/IconeCategoria'
+import { CATEGORIA_RGB } from '../../feed/cores'
+import Cedula from '../components/Cedula'
 import VerificarComprovante from '../components/VerificarComprovante'
-import type { Projeto, VotosResultado } from '../../../types/database'
+import LinhaDoTempo from '../components/LinhaDoTempo'
+import BotaoSalvar from '../components/BotaoSalvar'
+import {
+  CartaoEstimativa,
+  ComparadorFotos,
+  GaleriaObra,
+  SecaoProposta,
+  VideosAntesDepois,
+} from '../components/SecoesProjeto'
+import { CONTEUDO_PROJETO } from '../conteudo'
+import { FOTOS_PROJETO } from '../fotos'
+import { ETAPAS_PUBLICAS, dataLocal, diasRestantes, indiceEtapa, marcosCumpridos, proximoMarco } from '../etapas'
+import { CATEGORIAS, STATUS_LABELS, type Projeto } from '../../../types/database'
 
-type Opcao = 'favor' | 'contra'
+gsap.registerPlugin(useGSAP, SplitText)
 
-const caixaAviso = 'rounded-[var(--radius-field)] p-3 text-sm'
+const DIA_MS = 86_400_000
 
-// Tarefa 3.1 da Ana: tela de projeto completa — status, timeline (previsto × real,
-// com atraso) e área de votação (a favor/contra, comprovante, "já votou", resultado
-// agregado). Todas as consultas passam por ../api.ts; o voto em si é a função
-// `votar` do banco (0007_votacao_projetos.sql), que valida prazo/status e gera o hash.
+// Tarefa 3.1 da Ana: tela completa do projeto (timeline + status + votação).
+// O projeto vem de ../api.ts (ou dos exemplos da vitrine, ver ../vitrine.ts).
 export default function ProjetoDetailPage() {
   const { id } = useParams()
-  const { user, loading: carregandoConta } = useAuth()
-  const [hoje] = useState(hojeIso)
-  const [agora] = useState(() => Date.now())
+  // Guarda de qual id é o resultado: se não bate com o da URL, ainda está carregando.
+  // projeto null = não existe (ou é rejeitado de outro órgão).
+  const [carga, setCarga] = useState<{ id: string; projeto: Projeto | null } | null>(null)
+  const projeto = carga && carga.id === id ? carga.projeto : undefined
 
-  const [projeto, setProjeto] = useState<Projeto | null>(null)
-  const [resultado, setResultado] = useState<VotosResultado | null>(null)
-  const [carregando, setCarregando] = useState(true)
-  const [erroCarga, setErroCarga] = useState<string | null>(null)
-
-  const [comprovante, setComprovante] = useState<string | null>(null)
-  const [jaVotou, setJaVotou] = useState(false)
-  const [votouAgora, setVotouAgora] = useState(false)
-  const [escolha, setEscolha] = useState<Opcao | null>(null)
-  const [votando, setVotando] = useState(false)
-  const [erroVoto, setErroVoto] = useState<string | null>(null)
-
-  const userId = user?.id
-
-  // Projeto + resultado agregado
   useEffect(() => {
     if (!id) return
-    let cancelled = false
-    async function carregar(projetoId: string) {
-      try {
-        const p = await buscarProjeto(projetoId)
-        const r = p ? await buscarResultado(projetoId) : null
-        if (cancelled) return
-        setProjeto(p)
-        setResultado(r)
-      } catch (err) {
-        if (!cancelled) setErroCarga(err instanceof Error ? err.message : 'erro desconhecido')
-      } finally {
-        if (!cancelled) setCarregando(false)
-      }
-    }
-    carregar(id)
+    let cancelado = false
+    carregarProjeto(id)
+      .then((p) => {
+        if (!cancelado) setCarga({ id, projeto: p })
+      })
+      .catch(() => {
+        if (!cancelado) setCarga({ id, projeto: null })
+      })
     return () => {
-      cancelled = true
+      cancelado = true
     }
   }, [id])
 
-  // "Já votou?" — vale também depois de recarregar a página: o banco devolve o
-  // comprovante do próprio usuário (nunca a opção votada).
-  useEffect(() => {
-    if (!id) return
-    if (isSupabaseConfigured && !userId) return
-    let cancelled = false
-    buscarMeuComprovante(id)
-      .then((c) => {
-        if (cancelled || !c) return
-        setComprovante(c)
-        setJaVotou(true)
-      })
-      .catch(() => {
-        // sem comprovante conhecido: a tela só não mostra o estado "já votou" de início;
-        // se tentar votar de novo, o banco recusa (23505) e o estado aparece na hora.
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [id, userId])
-
-  if (carregando) {
-    return <div className="max-w-2xl mx-auto px-4 py-8 text-sm text-grafite-500">Carregando projeto...</div>
-  }
-
-  if (erroCarga) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className={`${caixaAviso} bg-status-vermelho-50 text-status-vermelho-700`}>
-          Não foi possível carregar o projeto: {erroCarga}
-        </div>
-        <Link to="/projetos" className="inline-block mt-3 text-amarelo-700 font-semibold text-sm hover:underline">
-          Voltar aos Projetos
-        </Link>
-      </div>
-    )
+  if (projeto === undefined) {
+    return <div className="min-h-[78vh] animate-pulse bg-grafite-100" aria-label="Carregando projeto" />
   }
 
   if (!projeto) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <p className="text-sm text-grafite-500">Projeto não encontrado.</p>
-        <Link to="/projetos" className="text-amarelo-700 font-semibold text-sm hover:underline">
-          Voltar aos Projetos
+      <div className="mx-auto max-w-3xl px-5 py-20 text-center">
+        <p className="font-heading text-3xl font-extrabold text-grafite-900">Projeto não encontrado</p>
+        <p className="mt-2 text-grafite-500">Ele pode ter sido removido ou ainda não estar visível ao público.</p>
+        <Link
+          to="/projetos"
+          className="mt-6 inline-flex rounded-full bg-amarelo-500 px-5 py-2.5 text-sm font-bold text-grafite-900"
+        >
+          Ver todos os projetos
         </Link>
       </div>
     )
   }
 
-  const projetoAtual = projeto
-  const prazoVencido = projetoAtual.consulta_fim !== null && new Date(projetoAtual.consulta_fim).getTime() < agora
-  const consultaAberta = projetoAtual.status === 'em_consulta' && !prazoVencido
-  const fimConsulta = projetoAtual.consulta_fim
-    ? new Date(projetoAtual.consulta_fim).toLocaleDateString('pt-BR')
+  return <ProjetoDetalhe projeto={projeto} />
+}
+
+function ProjetoDetalhe({ projeto }: { projeto: Projeto }) {
+  const [agora] = useState(() => Date.now())
+  const foto = FOTOS_PROJETO[projeto.id]
+  const [r, g, b] = CATEGORIA_RGB[projeto.categoria]
+  const categoria = CATEGORIAS.find((c) => c.value === projeto.categoria)?.label ?? projeto.categoria
+  const etapa = indiceEtapa(projeto.status)
+  const dias = diasRestantes(projeto, agora)
+  const proximo = proximoMarco(projeto)
+  const diasProximo = proximo
+    ? Math.max(0, Math.ceil((dataLocal(proximo.data_prevista).getTime() - agora) / DIA_MS))
     : null
+  const emConsulta = projeto.status === 'em_consulta'
+  const conteudo = CONTEUDO_PROJETO[projeto.id]
 
-  async function confirmarVoto() {
-    if (!escolha) return
-    setVotando(true)
-    setErroVoto(null)
-    const r = await registrarVoto(projetoAtual.id, escolha)
-    setVotando(false)
+  // --- Hero com profundidade: a foto desce mais devagar que a página.
+  const hero = useRef<HTMLElement>(null)
+  const { scrollYProgress } = useScroll({ target: hero, offset: ['start start', 'end start'] })
+  const fotoY = useTransform(scrollYProgress, [0, 1], ['0%', '22%'])
+  const fotoEscala = useTransform(scrollYProgress, [0, 1], [1.12, 1])
+  const tituloY = useTransform(scrollYProgress, [0, 1], [0, -90])
+  const escurecer = useTransform(scrollYProgress, [0, 1], [0.25, 0.7])
 
-    if (r.ok) {
-      setComprovante(r.comprovante)
-      setJaVotou(true)
-      setVotouAgora(true)
-      setEscolha(null)
-      // Recarrega o agregado oficial (inclui o voto que acabou de entrar).
-      buscarResultado(projetoAtual.id).then(setResultado).catch(() => {})
-      return
-    }
+  useGSAP(
+    () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      const titulo = SplitText.create('[data-titulo-projeto]', { type: 'lines', mask: 'lines' })
+      gsap
+        .timeline({ defaults: { ease: 'power4.out' } })
+        .from(titulo.lines, { yPercent: 105, duration: 1, stagger: 0.12, delay: 0.15 })
+        .from('[data-hero-chip]', { y: 16, opacity: 0, stagger: 0.08, duration: 0.6 }, '-=0.7')
+      return () => titulo.revert()
+    },
+    { scope: hero },
+  )
 
-    setEscolha(null)
-    if (r.motivo === 'ja_votou') {
-      setJaVotou(true)
-      buscarMeuComprovante(projetoAtual.id).then(setComprovante).catch(() => {})
-      return
-    }
-    setErroVoto(r.mensagem)
-  }
+  const faixa = emConsulta
+    ? [
+        'Consulta pública aberta',
+        dias === 0 ? 'Último dia para votar' : `Faltam ${dias} dias`,
+        'Seu voto conta',
+        'Voto secreto e auditável',
+      ]
+    : [
+        STATUS_LABELS[projeto.status],
+        proximo ? `Próxima etapa: ${proximo.nome}` : 'Obra entregue',
+        `${marcosCumpridos(projeto)} de ${projeto.timeline.length} marcos concluídos`,
+        categoria,
+      ]
 
-  function areaDeVoto() {
-    if (jaVotou) {
-      return (
+  return (
+    <div>
+      {/* HERO ------------------------------------------------------------ */}
+      <section ref={hero} className="relative h-[78vh] min-h-[520px] overflow-hidden text-white">
+        <motion.div className="absolute inset-0" style={{ y: fotoY, scale: fotoEscala }}>
+          {foto ? (
+            <img src={foto.url} alt={`Foto do local: ${foto.local}`} className="h-full w-full object-cover" />
+          ) : (
+            <div
+              className="h-full w-full"
+              style={{ background: `linear-gradient(135deg, rgb(${r},${g},${b}), rgba(${r},${g},${b},0.7))` }}
+            />
+          )}
+        </motion.div>
+        <motion.div className="absolute inset-0 bg-grafite-900" style={{ opacity: escurecer }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-grafite-900/90 via-grafite-900/20 to-transparent" />
+        <Topografia semente={projeto.id.length * 3.1} className="absolute inset-0 h-full w-full text-white/15" />
+
         <motion.div
-          key="ja-votou"
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          className={`${caixaAviso} ${
-            votouAgora ? 'bg-status-verde-50 text-status-verde-700' : 'bg-grafite-100 text-grafite-700'
-          }`}
+          style={{ y: tituloY }}
+          className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-5 sm:px-8 pb-12"
         >
-          {votouAgora
-            ? 'Voto registrado! Guarde seu comprovante.'
-            : 'Você já votou neste projeto. Como o voto é secreto, não mostramos qual opção você escolheu.'}
-          {comprovante && (
-            <p className="mt-1.5">
-              Comprovante: <code className="text-xs break-all">{comprovante.slice(0, 16)}</code>
+          <div className="mb-auto mt-8 flex items-center justify-between gap-3">
+            <Link
+              to="/projetos"
+              data-hero-chip
+              className="inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur transition-colors hover:bg-white/25"
+            >
+              ← Projetos
+            </Link>
+            <span data-hero-chip>
+              <BotaoSalvar projetoId={projeto.id} variante="completo" />
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              data-hero-chip
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em]"
+              style={{ background: `rgb(${r},${g},${b})` }}
+            >
+              <IconeCategoria categoria={projeto.categoria} size={14} />
+              {categoria}
+            </span>
+            <span
+              data-hero-chip
+              className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em] ${
+                emConsulta ? 'bg-amarelo-500 text-grafite-900' : projeto.status === 'rejeitado' ? 'bg-status-vermelho-500' : 'bg-white text-grafite-900'
+              }`}
+            >
+              {STATUS_LABELS[projeto.status]}
+            </span>
+          </div>
+
+          <h1
+            data-titulo-projeto
+            className="mt-5 max-w-5xl font-heading text-5xl sm:text-7xl lg:text-8xl font-extrabold leading-[0.92] tracking-tight"
+          >
+            {projeto.nome}
+          </h1>
+
+          {foto && (
+            <p data-hero-chip className="mt-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
+              {foto.local} ·{' '}
+              <a href={foto.fonte} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
+                Foto: {foto.autor}, {foto.licenca}
+              </a>
             </p>
           )}
         </motion.div>
-      )
-    }
+      </section>
 
-    // Em modo demonstração (sem Supabase) não existe login, então a votação é liberada.
-    if (isSupabaseConfigured && carregandoConta) {
-      return <p className="text-sm text-grafite-500">Verificando sua conta...</p>
-    }
-    if (isSupabaseConfigured && !user) {
-      return (
-        <div className={`${caixaAviso} bg-grafite-100 text-grafite-700`}>
-          Para votar é preciso estar logado.{' '}
-          <Link to="/entrar" className="font-semibold text-amarelo-700 hover:underline">
-            Entrar
-          </Link>{' '}
-          ou{' '}
-          <Link to="/cadastro" className="font-semibold text-amarelo-700 hover:underline">
-            criar conta
-          </Link>
-          .
-        </div>
-      )
-    }
+      {/* FAIXA ----------------------------------------------------------- */}
+      <Marquee
+        itens={faixa}
+        className={`py-4 font-heading text-xl sm:text-2xl font-extrabold uppercase tracking-tight ${
+          emConsulta ? 'bg-amarelo-500 text-grafite-900' : 'bg-amarelo-100 text-amarelo-900'
+        }`}
+      />
 
-    if (escolha) {
-      return (
-        <motion.div key="confirmar" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
-          <p className="text-sm text-grafite-900 mb-3">
-            Você vai votar <b>{escolha === 'favor' ? 'a favor' : 'contra'}</b>. O voto é secreto e
-            <b> não pode ser alterado depois</b>.
-          </p>
-          <div className="flex gap-3">
-            <Button onClick={confirmarVoto} disabled={votando} className="flex-1">
-              {votando ? 'Registrando...' : 'Confirmar voto'}
-            </Button>
-            <Button variant="secondary" onClick={() => setEscolha(null)} disabled={votando} className="flex-1">
-              Voltar
-            </Button>
-          </div>
-        </motion.div>
-      )
-    }
+      {/* CONTEÚDO -------------------------------------------------------- */}
+      <div className="mx-auto grid max-w-7xl gap-16 px-5 sm:px-8 py-16 lg:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">O projeto</p>
+          <TextoRevelado className="mt-4 font-heading text-3xl sm:text-4xl font-bold leading-[1.15] text-grafite-900">
+            {projeto.descricao}
+          </TextoRevelado>
 
-    return (
-      <motion.div key="botoes" exit={{ opacity: 0, scale: 0.96 }}>
-        <div className="flex gap-3">
-          <Button onClick={() => setEscolha('favor')} className="flex-1">
-            Votar a favor
-          </Button>
-          <Button variant="secondary" onClick={() => setEscolha('contra')} className="flex-1">
-            Votar contra
-          </Button>
-        </div>
-      </motion.div>
-    )
-  }
+          <dl className="mt-14 grid grid-cols-3 gap-4 border-y border-grafite-200 py-8">
+            <div>
+              <dd className="font-heading text-5xl font-extrabold text-grafite-900">
+                <Contador valor={marcosCumpridos(projeto)} />
+                <span className="text-grafite-300">/{projeto.timeline.length}</span>
+              </dd>
+              <dt className="mt-1 text-sm text-grafite-500">marcos da obra concluídos</dt>
+            </div>
+            <div>
+              <dd className="font-heading text-5xl font-extrabold text-grafite-900">
+                <Contador valor={etapa + 1} />
+                <span className="text-grafite-300">/{ETAPAS_PUBLICAS.length}</span>
+              </dd>
+              <dt className="mt-1 text-sm text-grafite-500">etapa do projeto</dt>
+            </div>
+            <div>
+              <dd className="font-heading text-5xl font-extrabold text-amarelo-700">
+                <Contador valor={emConsulta ? (dias ?? 0) : proximo ? (diasProximo ?? 0) : 100} />
+                {!emConsulta && !proximo && <span>%</span>}
+              </dd>
+              <dt className="mt-1 text-sm text-grafite-500">
+                {emConsulta ? 'dias para votar' : proximo ? 'dias até a próxima etapa' : 'da obra entregue'}
+              </dt>
+            </div>
+          </dl>
 
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <Link to="/projetos" className="text-sm text-grafite-500 hover:underline">
-        ← Voltar aos Projetos
-      </Link>
+          {conteudo && <SecaoProposta conteudo={conteudo} />}
+          {conteudo?.estimativa && <CartaoEstimativa estimativa={conteudo.estimativa} projeto={projeto} />}
+          {conteudo?.antesDepois && <ComparadorFotos antes={conteudo.antesDepois.antes} depois={conteudo.antesDepois.depois} />}
+          {conteudo?.videos && <VideosAntesDepois videos={conteudo.videos} />}
+          {conteudo?.galeria && conteudo.galeria.length > 0 && <GaleriaObra fotos={conteudo.galeria} />}
 
-      <div className="mt-4">
-        <StatusDestaque projeto={projetoAtual} />
-      </div>
-
-      <Card className="mt-4">
-        <CategoryBadge categoria={projetoAtual.categoria} />
-        <h1 className="font-heading text-xl font-bold text-grafite-900 mt-2 mb-2">{projetoAtual.nome}</h1>
-        <p className="text-sm text-grafite-700">{projetoAtual.descricao}</p>
-        {projetoAtual.origem_post_id && (
-          <Link
-            to={`/feed/${projetoAtual.origem_post_id}`}
-            className="inline-block mt-3 text-sm font-semibold text-amarelo-700 hover:underline"
-          >
-            Originado de um relato do Feed →
-          </Link>
-        )}
-      </Card>
-
-      <Card className="mt-4">
-        <h2 className="font-heading text-sm font-bold text-grafite-900 mb-1">Linha do tempo</h2>
-        <TimelineProjeto marcos={projetoAtual.timeline} hoje={hoje} />
-      </Card>
-
-      {projetoAtual.status === 'proposto' ? (
-        <Card className="mt-4">
-          <h2 className="font-heading text-sm font-bold text-grafite-900 mb-1">Consulta pública</h2>
-          <p className="text-sm text-grafite-500">
-            A consulta ainda não foi aberta. Quando o órgão abrir, a votação aparece aqui.
-          </p>
-        </Card>
-      ) : (
-        <Card className="mt-4 overflow-hidden">
-          <h2 className="font-heading text-sm font-bold text-grafite-900 mb-1">
-            {consultaAberta ? 'Consulta pública' : 'Resultado da consulta pública'}
-          </h2>
-          <p className="text-xs text-grafite-500 mb-4">
-            Seu voto é secreto (nunca vinculado ao seu nome publicamente) e consultivo — não obriga a
-            decisão final do governo, mas gera um registro oficial de opinião.
-            {consultaAberta && fimConsulta && ` A consulta fica aberta até ${fimConsulta}.`}
-          </p>
-
-          {resultado && (
-            <VotoBar favor={resultado.votos_favor} contra={resultado.votos_contra} className="mb-4" />
-          )}
-
-          {consultaAberta ? (
-            <>
-              <AnimatePresence mode="wait">{areaDeVoto()}</AnimatePresence>
-              {erroVoto && <p className="text-xs text-status-vermelho-500 mt-2">{erroVoto}</p>}
-              <p className="text-xs text-grafite-500 mt-4">
-                Nesta versão a conta é identificada só por e-mail e senha — ainda não há checagem de CPF ou
-                gov.br, então o resultado é um termômetro de opinião, não uma votação oficial.
+          <section className="mt-16">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">Onde está</p>
+            <ol className="mt-5 grid grid-cols-5 gap-2">
+              {ETAPAS_PUBLICAS.map((e, i) => {
+                const feita = i < etapa || projeto.status === 'concluido'
+                const atual = i === etapa && projeto.status !== 'concluido'
+                return (
+                  <motion.li
+                    key={e.status}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08 }}
+                    className={`rounded-2xl px-3 py-4 text-center ${
+                      atual
+                        ? 'bg-amarelo-500 text-grafite-900 shadow-[0_12px_24px_-12px_rgba(245,184,0,0.9)]'
+                        : feita
+                          ? 'bg-status-verde-50 text-status-verde-700'
+                          : 'bg-grafite-100 text-grafite-500'
+                    }`}
+                  >
+                    <span className="block font-heading text-2xl font-extrabold">{i + 1}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.08em]">{e.label}</span>
+                  </motion.li>
+                )
+              })}
+            </ol>
+            {projeto.status === 'rejeitado' && (
+              <p className="mt-3 rounded-2xl bg-status-vermelho-50 px-4 py-3 text-sm font-semibold text-status-vermelho-700">
+                Este projeto foi rejeitado na consulta pública e não aparece para a população.
               </p>
+            )}
+          </section>
+
+          <section className="mt-16">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">Linha do tempo da obra</p>
+            <div className="mt-8">
+              <LinhaDoTempo marcos={projeto.timeline} />
+            </div>
+          </section>
+
+          {projeto.origem_post_id && (
+            <Link
+              to={`/feed/${projeto.origem_post_id}`}
+              className="group mt-16 flex items-center justify-between gap-6 overflow-hidden rounded-[28px] bg-grafite-100 p-6 transition-colors hover:bg-amarelo-50"
+            >
+              <span>
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">De onde veio</span>
+                <span className="mt-1 block font-heading text-2xl font-extrabold text-grafite-900">
+                  Este projeto nasceu de um relato da população
+                </span>
+                <span className="mt-1 block text-sm text-grafite-700">Veja o problema que deu origem a ele no Feed.</span>
+              </span>
+              <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-amarelo-500 text-2xl text-grafite-900 transition-transform group-hover:translate-x-1 group-hover:-rotate-12">
+                →
+              </span>
+            </Link>
+          )}
+        </div>
+
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          {emConsulta ? (
+            <>
+              <Cedula projeto={projeto} agora={agora} />
+              <div className="mt-4 rounded-[24px] border border-grafite-200 bg-white px-5 pb-4">
+                <VerificarComprovante projetoId={projeto.id} />
+              </div>
             </>
           ) : (
-            <div className={`${caixaAviso} bg-grafite-100 text-grafite-700`}>
-              {projetoAtual.status === 'em_consulta'
-                ? `O prazo da consulta terminou${fimConsulta ? ` em ${fimConsulta}` : ''}. Aguardando a decisão do órgão.`
-                : 'A consulta pública foi encerrada. Não é mais possível votar.'}
-              {jaVotou && comprovante && (
-                <p className="mt-1.5">
-                  Seu comprovante: <code className="text-xs break-all">{comprovante.slice(0, 16)}</code>
+            <div className="overflow-hidden rounded-[32px] border border-grafite-200 bg-white">
+              <div className="bg-amarelo-100 px-6 py-5">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amarelo-900">Consulta pública</p>
+                <p className="mt-1 font-heading text-2xl font-extrabold text-grafite-900">
+                  {projeto.status === 'proposto' ? 'Ainda não abriu' : 'Encerrada'}
                 </p>
-              )}
+              </div>
+              <p className="p-6 text-sm text-grafite-700">
+                {projeto.status === 'proposto'
+                  ? 'Quando o órgão abrir a consulta, a votação aparece aqui.'
+                  : projeto.status === 'rejeitado'
+                    ? 'A população rejeitou o projeto na consulta.'
+                    : 'A população já votou neste projeto. Acompanhe a obra pela linha do tempo.'}
+              </p>
             </div>
           )}
-
-          <VerificarComprovante projetoId={projetoAtual.id} />
-        </Card>
-      )}
+        </aside>
+      </div>
     </div>
   )
 }
