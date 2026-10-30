@@ -14,7 +14,7 @@ O cidadão relata um problema no mapa, o relato ganha peso pela recorrência e p
 
 ![O Recife na landing do Confluência](docs/img/landing-mapa.png)
 
-> Projeto de disciplina do 4º período, feito por três pessoas. **Apresentação: 05/11/2026.**
+> Projeto de disciplina do 4º período, feito por três pessoas. **Apresentação: primeira semana de dezembro de 2026 (data exata a confirmar).**
 
 ## Sumário
 
@@ -102,7 +102,7 @@ docs/                  documentação
 | Ana Beatriz | Frontend de Projetos, apoio ao banco | [@anabeatrizlsf](https://github.com/anabeatrizlsf) |
 | Guilherme Araújo | Backend, autenticação, votação, deploy | [@guiaraujoo](https://github.com/guiaraujoo) |
 
-Quatro semanas de desenvolvimento (07/10 a 01/11), três dias de folga e apresentação em 05/11 ([cronograma](docs/cronograma-atualizado.md)). A `main` é protegida: tudo entra por PR revisado ([ambiente colaborativo](docs/ambiente-colaborativo.md)).
+Quatro semanas de desenvolvimento (07/10 a 01/11) e apresentação na primeira semana de dezembro (adiada; antes era 05/11) ([cronograma](docs/cronograma-atualizado.md)). A `main` é protegida: tudo entra por PR revisado ([ambiente colaborativo](docs/ambiente-colaborativo.md)).
 
 ## Licença
 

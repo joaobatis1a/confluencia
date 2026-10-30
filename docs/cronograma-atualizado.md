@@ -2,6 +2,8 @@
 
 **Gerado em:** 07/10/2026 · **Apresentação:** 05/11/2026 (quinta-feira) · **Dias disponíveis:** 29
 
+> **Atualização de 29/10:** a apresentação foi adiada para a **primeira semana de dezembro de 2026** (data exata a confirmar). O cronograma abaixo é o plano original de outubro, mantido como registro: as 4 semanas de desenvolvimento não mudam, e o tempo a mais até dezembro vira folga para testes, correções e ensaio.
+
 ## Atualização de 08/10 — Semana 1 adiantada e já mesclada na main
 
 Boa parte da Semana 1 (e um adiantamento da Semana 2) já foi implementada, revisada e está **mesclada na branch `main`** (era o [PR #1](https://github.com/joaobatis1a/confluencia/pull/1), já fechado) e **no ar** em [confluencia-liart.vercel.app](https://confluencia-liart.vercel.app): mapa Leaflet, captura de coordenadas, Feed completo (mock), módulo Projetos completo (mock), autenticação via Supabase (código pronto), as 4 migrations SQL do banco (`posts`, `profiles`, `projetos`, `votos`, com RLS), animações de interface, README, LICENSE (MIT, nos três nomes) e deploy conectado ao GitHub. Cada guia individual em PDF tem uma seção "Status atual" explicando o que já está pronto e o próximo passo de cada um.
