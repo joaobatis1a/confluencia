@@ -18,13 +18,13 @@
 
 ## Próximos passos
 
-### Antes da apresentação (Semana 4 e buffer, até 04/11)
+### Antes da apresentação (primeira semana de dezembro)
 
 Detalhados nos guias individuais da Semana 4:
 
 - **Guilherme:** aplicar 0007, 0008, seeds e 0009; remover uma das funções de voto; filtrar rejeitados em `comprovantes_publicos`; testar burlas; backup; deploy e README.
 - **Ana:** ligar Feed e Projetos pelo campo de origem nos dois sentidos; testar o fluxo de voto no banco real; responsividade de Projetos.
-- **João:** clusters no mapa novo; repaginar Painel e Criar projeto; responsividade do Feed; roteiro da apresentação.
+- **João:** repaginar Painel e Criar projeto; roteiro da apresentação. (Clusters no mapa novo e responsividade do Feed entraram no PR #12.)
 - **Todos:** apagar os dados `[SEED]` que aparecem ao público.
 
 ### Depois do MVP

@@ -33,7 +33,7 @@ O ciclo completo:
 - **Não prometer o que não entrega.** A simulação de "antes e depois" do relato é ilustrativa e diz isso na tela. O resultado da consulta é consultivo: orienta a decisão, mas não a obriga.
 - **A cidade no centro.** O mapa é a interface principal, não um enfeite.
 
-## Escopo do MVP (apresentação de 05/11)
+## Escopo do MVP (apresentação na primeira semana de dezembro)
 
 Dentro:
 
