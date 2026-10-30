@@ -21,6 +21,7 @@ Escopo combinado no início do projeto (guias individuais) e o que cada pessoa e
 | Feed, detalhe e "Meus relatos" ligados ao Supabase real (Tarefas 2.4 a 2.6) | [PR #4](https://github.com/joaobatis1a/confluencia/pull/4) |
 | Apoio na votação: voto real com hash e barra de resultado (Tarefa 3.1) | [PR #5](https://github.com/joaobatis1a/confluencia/pull/5) |
 | Clusters no mapa Leaflet (Tarefa 4.2, chamada de 5.2 no cronograma) | [PR #8](https://github.com/joaobatis1a/confluencia/pull/8) |
+| Clusters no mapa novo, fim do redesenho contínuo no Feed e no relato, remoção do Leaflet (Tarefas 4.2 e 4.3) | [PR #12](https://github.com/joaobatis1a/confluencia/pull/12) |
 | Repaginada: landing, mapa 3D do Feed, tela de Entrar com contas demo, perfil único, camada social (migrations 0008 e 0009), redesenho de Projetos, otimização de desempenho, simulação visual (Tarefa 4.1) | 25 commits integrados no [PR #10](https://github.com/joaobatis1a/confluencia/pull/10) |
 | Integração da Semana 3 com a repaginada (conflitos, renumeração das migrations, telas novas lendo pelo `api.ts`) | [PR #10](https://github.com/joaobatis1a/confluencia/pull/10) |
 | Cronograma, guias semanais, documentação | [PR #2](https://github.com/joaobatis1a/confluencia/pull/2), `docs/` |
@@ -59,4 +60,4 @@ O número de commits não mede o tamanho da contribuição: a Ana entrega em pou
 |---|---|---|
 | Ana | `feature/feed-projetos-origem` | 4.1 Feed ↔ Projetos pelo campo origem · 4.2 ajustes e revisão do banco · 4.3 responsividade |
 | Guilherme | `feature/integracao-seguranca-deploy` | 4.1 aplicar 0007 a 0009 e testes ponta a ponta · 4.2 bugs e queries · 4.3 segurança e backup · 4.4 deploy e README |
-| João | `feature/polimento-feed-mapa` | 4.2 clusters no mapa novo · 4.3 responsividade do Feed e visual de Painel e Criar projeto · roteiro da apresentação |
+| João | `feature/polimento-feed-mapa` | 4.2 clusters no mapa novo (feito, PR #12) · 4.3 responsividade do Feed (feito, PR #12) e visual de Painel e Criar projeto · roteiro da apresentação |

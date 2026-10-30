@@ -25,7 +25,6 @@ Mapas
 | Rotas | React Router 7 | Rotas por página, cada uma carregada sob demanda |
 | Animação | Framer Motion (interface) e GSAP + ScrollTrigger + SplitText (landing e títulos) | Framer para estados de componente; GSAP para animações presas à rolagem |
 | Mapa do Feed | MapLibre GL 6 + react-map-gl + deck.gl (`HexagonLayer`, `ScatterplotLayer`) | Mapa vetorial 3D com colunas de repercussão, sem chave de API |
-| Mapa antigo | Leaflet + react-leaflet | Só o `LocationPicker` (validação da região) e o `MapView` dos clusters antigos |
 | Banco e login | Supabase (Postgres, Auth, RLS) | Banco, autenticação e API prontos, sem backend para manter |
 | Deploy | Vercel, ligado ao GitHub | Publica a cada merge na `main` e gera preview por PR |
 | Qualidade | `tsc -b`, oxlint | Tipagem e lint em todo build |
@@ -116,8 +115,9 @@ Detalhes em [Votação](votacao.md) e [Banco de dados](banco-de-dados.md).
 
 | Onde | Como |
 |---|---|
-| Feed (`MapaVivo.tsx`) | MapLibre com estilo Positron do OpenFreeMap. deck.gl desenha colunas hexagonais de repercussão (3D) ou pontos por categoria (2D). Tooltip escapa o texto do usuário antes de virar HTML |
-| Relatar (`MapaEscolha.tsx`) | MapLibre para marcar o ponto; `isWithinRecifeMetro` (de `LocationPicker.tsx`) recusa pontos fora da Região Metropolitana |
+| Feed (`MapaVivo.tsx`) | MapLibre com estilo Positron do OpenFreeMap. deck.gl desenha colunas hexagonais de repercussão (3D) ou pontos por categoria (2D). Pinos a menos de 30 px na tela viram um grupo com o número de relatos (`feed/agrupar.ts`); o clique aproxima até separar. Tooltip escapa o texto do usuário antes de virar HTML |
+| Detalhe do relato (`MapaOrbita.tsx`) | Câmera inclinada que dá meia volta em 12 s em torno do ponto e para |
+| Relatar (`MapaEscolha.tsx`) | MapLibre para marcar o ponto; `isWithinRecifeMetro` (de `lib/regiao.ts`) recusa pontos fora da Região Metropolitana |
 | Landing (`MapaCidade.tsx`) | Renderiza o Recife em 3D uma vez, tira uma "foto" do canvas (`preserveDrawingBuffer` + `toDataURL`), posiciona os pinos em porcentagem e desmonta o mapa. A animação continua só com CSS, sem WebGL rodando |
 
 ## Desempenho
@@ -130,6 +130,8 @@ O primeiro protótipo da landing travava. O que resolveu, medido no navegador (t
 | `backdrop-blur` em barras e painéis sobre conteúdo em movimento | ~20 ms ao rolar | Fundos sólidos | ~16 ms |
 | Janela do topo animando `clip-path` | Recalculo de pintura a cada quadro | Escala por `transform` com o conteúdo em escala inversa | Roda no compositor |
 | Animações contínuas em JavaScript | Ocupavam a thread principal | `@keyframes` em `src/index.css` | Roda no compositor |
+| Mapa do Feed redesenhando a tela inteira a cada quadro (pulso dos relatos no estado do React) | ~560 ms de JS por segundo parado | Pulso trocado direto no overlay, só com relato recente | ~25 ms/s |
+| Mapa do relato girando para sempre | ~570 ms de JS por segundo parado | Meia volta de 12 s e para | ~50 ms/s |
 | Pacote principal de 2,2 MB | Tudo carregado na primeira visita | `React.lazy` por rota e mapa da landing à parte | 618 kB (184 kB gzip) |
 
 Quem prefere menos movimento (`prefers-reduced-motion`) recebe a versão sem animação: as animações de GSAP retornam cedo e a classe `.anima-continua` desliga os `@keyframes`.
