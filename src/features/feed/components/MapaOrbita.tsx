@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import Map, { Marker, type MapRef } from 'react-map-gl/maplibre'
 import { setWorkerUrl } from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
@@ -14,11 +14,11 @@ interface MapaOrbitaProps {
   cor: string
 }
 
-// Mapa do detalhe do relato: câmera inclinada girando devagar em volta do
-// ponto relatado, com prédios em 3D. Para de girar quando a pessoa mexe.
+// Mapa do detalhe do relato: câmera inclinada que dá meia volta devagar em
+// torno do ponto relatado, com prédios em 3D, e para. Girar para sempre
+// custava ~570 ms de JavaScript por segundo, mesmo com a página parada.
 export default function MapaOrbita({ latitude, longitude, cor }: MapaOrbitaProps) {
   const mapRef = useRef<MapRef>(null)
-  const girando = useRef(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 
   const aoCarregar = useCallback(() => {
     const map = mapRef.current?.getMap()
@@ -42,21 +42,12 @@ export default function MapaOrbita({ latitude, longitude, cor }: MapaOrbitaProps
         },
       })
     }
-    map.on('dragstart', () => (girando.current = false))
-    map.on('wheel', () => (girando.current = false))
-  }, [])
-
-  useEffect(() => {
-    let frame = 0
-    let anterior = performance.now()
-    const girar = (agora: number) => {
-      const map = mapRef.current?.getMap()
-      if (map && girando.current) map.setBearing((map.getBearing() + (agora - anterior) * 0.006) % 360)
-      anterior = agora
-      frame = requestAnimationFrame(girar)
+    // Começa com o crédito do mapa recolhido (só o "i"): aberto, ele cobre o título no celular.
+    map.getContainer().querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show')
+    // A animação é do próprio MapLibre: termina sozinha e para se a pessoa arrastar o mapa.
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      map.rotateTo(map.getBearing() + 70, { duration: 12000, easing: (x) => 1 - (1 - x) * (1 - x) })
     }
-    frame = requestAnimationFrame(girar)
-    return () => cancelAnimationFrame(frame)
   }, [])
 
   return (
