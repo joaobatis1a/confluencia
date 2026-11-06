@@ -59,10 +59,10 @@ export default function MapaEscolha({ valor, onEscolher, cor, onFora }: MapaEsco
         'source-layer': 'building',
         minzoom: 14,
         paint: {
-          'fill-extrusion-color': '#ece4d0',
+          'fill-extrusion-color': '#ebe3cf',
           'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 8],
           'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-          'fill-extrusion-opacity': 0.85,
+          'fill-extrusion-opacity': 1,
         },
       })
     }
@@ -79,6 +79,7 @@ export default function MapaEscolha({ valor, onEscolher, cor, onFora }: MapaEsco
 
   return (
     <Map
+      fadeDuration={0}
       ref={mapRef}
       initialViewState={{ ...RECIFE, zoom: 12.3, pitch: 35 }}
       mapStyle={ESTILO}

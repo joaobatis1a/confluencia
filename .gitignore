@@ -22,3 +22,7 @@ build/
 
 # Backups do banco (têm e-mails e hashes de senha)
 backup-*.sql
+
+# Playwright
+test-results/
+playwright-report/

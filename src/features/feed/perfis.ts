@@ -8,7 +8,13 @@ const COM_FOTOS = `${COMPLETO}, avatar_url, capa_url`
 // Antes da 0008 os campos do perfil público não existem: cai para o básico.
 const BASICO = 'id, nome, institucional_verificado, orgao_nome, created_at'
 
-const NIVEIS = [COM_FOTOS, COMPLETO, BASICO]
+// 0016: o público lê a view perfis_publicos (só o primeiro nome). Sem ela, cai para a tabela.
+const NIVEIS = [
+  { tabela: 'perfis_publicos', colunas: COM_FOTOS },
+  { tabela: 'profiles', colunas: COM_FOTOS },
+  { tabela: 'profiles', colunas: COMPLETO },
+  { tabela: 'profiles', colunas: BASICO },
+]
 let nivel = 0
 
 const cache = new Map<string, PerfilPublico>()
@@ -17,8 +23,8 @@ export async function buscarPerfis(ids: string[]): Promise<Map<string, PerfilPub
   const faltando = [...new Set(ids)].filter((id) => !cache.has(id))
   if (faltando.length > 0) {
     let linhas: unknown[] | null = null
-    for (const colunas of NIVEIS.slice(nivel)) {
-      const r = await supabase.from('profiles').select(colunas).in('id', faltando)
+    for (const { tabela, colunas } of NIVEIS.slice(nivel)) {
+      const r = await supabase.from(tabela).select(colunas).in('id', faltando)
       if (!r.error) {
         linhas = r.data
         break

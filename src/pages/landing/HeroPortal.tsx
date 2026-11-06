@@ -94,7 +94,7 @@ export default function HeroPortal({ pontos, carregou, totais, pronto }: HeroPor
     () => {
       if (!pronto || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
       const linhas = SplitText.create('[data-linha] [data-letras]', {
-        type: 'chars',
+        aria: 'none', type: 'chars',
         mask: 'chars',
       })
       gsap
@@ -120,7 +120,7 @@ export default function HeroPortal({ pontos, carregou, totais, pronto }: HeroPor
       </div>
 
       {/* Palavras */}
-      <h1 className="pointer-events-none absolute inset-0 font-heading font-extrabold leading-[0.82] tracking-[-0.04em] text-grafite-900">
+      <h1 aria-label="Sua cidade tem voz." className="pointer-events-none absolute inset-0 font-heading font-extrabold leading-[0.82] tracking-[-0.04em] text-grafite-900">
         <span
           data-linha="1"
           className="absolute will-change-transform left-[4vw] top-[14vh] block text-[clamp(4rem,13vw,15rem)] md:top-[11vh]"
