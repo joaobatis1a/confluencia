@@ -78,28 +78,32 @@ function NavCentral() {
   const itens: ItemNav[] = [
     {
       to: '/feed',
-      label: 'Feed',
-      curto: 'Feed',
+      label: ehGestor ? 'Central' : 'Feed',
+      curto: ehGestor ? 'Central' : 'Feed',
       icone: ICONES.feed,
       ativo: (p) => p === '/' || p.startsWith('/feed'),
     },
     {
       to: '/projetos',
-      label: 'Projetos',
-      curto: 'Projetos',
+      label: ehGestor ? 'Quadro' : 'Projetos',
+      curto: ehGestor ? 'Quadro' : 'Projetos',
       icone: ICONES.projetos,
       ativo: (p) => p.startsWith('/projetos') && p !== '/projetos/novo',
     },
   ]
   if (ehGestor) {
-    itens.push({ to: '/painel', label: 'Painel de gestor', curto: 'Painel', icone: ICONES.painel, ativo: (p) => p === '/painel' || p === '/projetos/novo' })
+    itens.push({ to: '/painel', label: 'Painel do órgão', curto: 'Painel', icone: ICONES.painel, ativo: (p) => p === '/painel' || p === '/projetos/novo' })
   }
 
   return (
     <nav
       aria-label="Principal"
       onMouseLeave={() => setSobMouse(null)}
-      className="flex items-center gap-0.5 rounded-full border border-grafite-200 bg-white/80 p-1 shadow-[0_6px_20px_-12px_rgba(27,24,19,0.35)]"
+      className={`flex items-center gap-0.5 rounded-full border p-1 ${
+        ehGestor
+          ? 'border-grafite-900 bg-grafite-900 shadow-[0_8px_24px_-10px_rgba(27,24,19,0.8)]'
+          : 'border-grafite-200 bg-white/80 shadow-[0_6px_20px_-12px_rgba(27,24,19,0.35)]'
+      }`}
     >
       {itens.map((item) => {
         const ativo = item.ativo(pathname)
@@ -110,13 +114,13 @@ function NavCentral() {
             onMouseEnter={() => setSobMouse(item.to)}
             aria-current={ativo ? 'page' : undefined}
             className={`relative flex items-center gap-1.5 rounded-full px-3 sm:px-4 py-1.5 text-sm font-semibold whitespace-nowrap transition-colors ${
-              ativo ? 'text-grafite-900' : 'text-grafite-700 hover:text-grafite-900'
+              ativo ? 'text-grafite-900' : ehGestor ? 'text-white/70 hover:text-white' : 'text-grafite-700 hover:text-grafite-900'
             }`}
           >
             {sobMouse === item.to && !ativo && (
               <motion.span
                 layoutId="nav-sob-mouse"
-                className="absolute inset-0 rounded-full bg-grafite-100"
+                className={`absolute inset-0 rounded-full ${ehGestor ? 'bg-white/10' : 'bg-grafite-100'}`}
                 transition={{ type: 'spring', stiffness: 500, damping: 38 }}
               />
             )}
