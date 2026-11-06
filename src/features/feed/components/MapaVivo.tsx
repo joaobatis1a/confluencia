@@ -29,7 +29,7 @@ const escapar = (texto: string) =>
   texto.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
 function DeckOverlay({ aoCriar, ...props }: MapboxOverlayProps & { aoCriar: (overlay: MapboxOverlay) => void }) {
-  const overlay = useControl<MapboxOverlay>(() => new MapboxOverlay(props))
+  const overlay = useControl<MapboxOverlay>(() => new MapboxOverlay({ ...props, useDevicePixels: 1.5 }))
   overlay.setProps(props)
   useEffect(() => aoCriar(overlay), [overlay, aoCriar])
   return null
@@ -79,6 +79,8 @@ export default function MapaVivo({ posts, ativoId, foco, modo3d, onHover, onSele
   const [colunasDePe, setColunasDePe] = useState(false)
   // Muda a cada fim de movimento da câmera: é o que refaz os grupos.
   const [camera, setCamera] = useState(0)
+  // Enquanto a câmera se move, o pulso para: o mapa já tem trabalho de sobra.
+  const movendo = useRef(false)
 
   // Personaliza a base depois que o estilo carrega: rios em destaque e
   // prédios em 3D num tom quente, para casar com o creme da interface.
@@ -99,14 +101,15 @@ export default function MapaVivo({ posts, ativoId, foco, modo3d, onHover, onSele
         'source-layer': 'building',
         minzoom: 14,
         paint: {
-          'fill-extrusion-color': '#ece4d0',
+          'fill-extrusion-color': '#ebe3cf',
           'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 8],
           'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-          'fill-extrusion-opacity': 0.85,
+          'fill-extrusion-opacity': 1,
         },
       })
     }
     aplicarBloqueio(map)
+    if (import.meta.env.DEV) (window as unknown as { __mapa?: unknown }).__mapa = map
     // No desktop o painel cobre ~440px à esquerda: a câmera compensa para a cidade ficar à vista.
     // No celular é a gaveta que cobre a metade de baixo.
     if (window.matchMedia('(min-width: 1024px)').matches) map.setPadding({ left: 500, top: 0, right: 0, bottom: 0 })
@@ -270,7 +273,7 @@ export default function MapaVivo({ posts, ativoId, foco, modo3d, onHover, onSele
     const inicio = performance.now()
     const tick = (agora: number) => {
       frame = requestAnimationFrame(tick)
-      if (agora - ultimo < 33) return // ~30 quadros por segundo bastam para um pulso
+      if (movendo.current || agora - ultimo < 50) return // ~20 quadros por segundo bastam para um pulso
       ultimo = agora
       overlayRef.current?.setProps({ layers: [...camadas, camadaPulso(recentes, ((agora - inicio) % 1800) / 1800)] })
     }
@@ -284,7 +287,14 @@ export default function MapaVivo({ posts, ativoId, foco, modo3d, onHover, onSele
       initialViewState={{ ...RECIFE, zoom: 11.2, pitch: 0, bearing: 0 }}
       mapStyle={ESTILO}
       onLoad={aoCarregar}
-      onMoveEnd={() => setCamera((c) => c + 1)}
+      onMoveStart={() => {
+        movendo.current = true
+      }}
+      onMoveEnd={() => {
+        movendo.current = false
+        setCamera((c) => c + 1)
+      }}
+      fadeDuration={0}
       cursor={ativoId ? 'pointer' : 'grab'}
       style={{ width: '100%', height: '100%' }}
       attributionControl={{ compact: true }}

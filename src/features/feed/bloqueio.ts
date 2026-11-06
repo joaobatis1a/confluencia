@@ -31,18 +31,31 @@ function listras(): { width: number; height: number; data: Uint8ClampedArray } {
   return { width: lado, height: lado, data: ctx.getImageData(0, 0, lado, lado).data }
 }
 
-/** Escurece e listra tudo fora do Recife, desenha a fronteira e trava a câmera na cidade. */
+/**
+ * Deixa o mapa mais leve sem mudar o visual: telas de alta densidade (2x ou
+ * mais) desenham 4x os pixels, então limita a 1,5x; e tira os escudos de
+ * rodovia (ícones que o MapLibre reposiciona a cada quadro com a câmera inclinada).
+ */
+export function aliviarMapa(map: MapaLibre) {
+  map.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5))
+  // Camadas que não servem a uma cidade só: gelo, fronteiras, túneis, rótulos de país e estado.
+  const inuteis = /^(landcover_ice|landcover_glacier|boundary|tunnel_|road_area_pier|road_pier|label_country|label_state|railway_.*dashline)|shield|path|waterway_line_label/
+  for (const camada of map.getStyle().layers) {
+    if (inuteis.test(camada.id)) map.setLayoutProperty(camada.id, 'visibility', 'none')
+  }
+  // Os prédios 2D só aparecem de longe; de perto o 3D toma o lugar (evita desenhar duas vezes).
+  if (map.getLayer('building')) map.setLayerZoomRange('building', 0, 14)
+}
+
+/** Escurece e listra tudo fora do Recife e trava a câmera na cidade. */
 export function aplicarBloqueio(map: MapaLibre) {
   if (map.getSource('bloqueio')) return
+  aliviarMapa(map)
   map.setMaxBounds(LIMITES_CAMERA)
   if (!map.hasImage('listras-bloqueio')) map.addImage('listras-bloqueio', listras())
   map.addSource('bloqueio', {
     type: 'geojson',
     data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [MUNDO, ...LIMITE_RECIFE] } },
-  })
-  map.addSource('fronteira', {
-    type: 'geojson',
-    data: { type: 'Feature', properties: {}, geometry: { type: 'MultiLineString', coordinates: LIMITE_RECIFE } },
   })
   // Véu e listras ficam abaixo dos nomes de ruas e bairros (continuam legíveis);
   // só a linha da fronteira vai por cima de tudo.
@@ -60,18 +73,4 @@ export function aplicarBloqueio(map: MapaLibre) {
       paint: { 'fill-color': map.getPaintProperty('water', 'fill-color') ?? '#9fd3d6' },
     }, primeiroRotulo)
   }
-  map.addLayer({
-    id: 'fronteira-brilho',
-    type: 'line',
-    source: 'fronteira',
-    layout: { 'line-join': 'round' },
-    paint: { 'line-color': '#f5b800', 'line-width': 12, 'line-blur': 9, 'line-opacity': 0.55 },
-  })
-  map.addLayer({
-    id: 'fronteira',
-    type: 'line',
-    source: 'fronteira',
-    layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': '#f5b800', 'line-width': 3, 'line-dasharray': [2.2, 1.6] },
-  })
 }
