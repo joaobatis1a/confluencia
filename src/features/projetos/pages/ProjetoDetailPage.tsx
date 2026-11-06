@@ -105,7 +105,7 @@ function ProjetoDetalhe({ projeto }: { projeto: Projeto }) {
   useGSAP(
     () => {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      const titulo = SplitText.create('[data-titulo-projeto]', { type: 'lines', mask: 'lines' })
+      const titulo = SplitText.create('[data-titulo-projeto]', { aria: 'none', type: 'lines', mask: 'lines' })
       gsap
         .timeline({ defaults: { ease: 'power4.out' } })
         .from(titulo.lines, { yPercent: 105, duration: 1, stagger: 0.12, delay: 0.15 })
@@ -222,14 +222,14 @@ function ProjetoDetalhe({ projeto }: { projeto: Projeto }) {
             <div>
               <dd className="font-heading text-[2rem] min-[400px]:text-4xl sm:text-5xl font-extrabold text-grafite-900">
                 <Contador valor={marcosCumpridos(projeto)} />
-                <span className="text-grafite-300">/{projeto.timeline.length}</span>
+                <span className="text-grafite-500">/{projeto.timeline.length}</span>
               </dd>
               <dt className="mt-1 text-xs sm:text-sm text-grafite-500">marcos da obra concluídos</dt>
             </div>
             <div>
               <dd className="font-heading text-[2rem] min-[400px]:text-4xl sm:text-5xl font-extrabold text-grafite-900">
                 <Contador valor={etapa + 1} />
-                <span className="text-grafite-300">/{ETAPAS_PUBLICAS.length}</span>
+                <span className="text-grafite-500">/{ETAPAS_PUBLICAS.length}</span>
               </dd>
               <dt className="mt-1 text-xs sm:text-sm text-grafite-500">etapa do projeto</dt>
             </div>

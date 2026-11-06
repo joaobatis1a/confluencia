@@ -179,3 +179,32 @@ drop policy if exists "profiles: leitura do proprio perfil" on public.profiles;
 create policy "profiles: leitura do proprio perfil"
   on public.profiles for select
   using (auth.uid() = id);
+
+-- 4. Limites de tamanho no servidor ---------------------------------------------------
+-- A tela já limita, mas pela API dava para gravar textos gigantes (lixo e custo
+-- de armazenamento). NOT VALID: vale para o que entrar daqui para frente, sem
+-- reprovar linhas antigas.
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'posts_descricao_tamanho') then
+    alter table public.posts add constraint posts_descricao_tamanho
+      check (char_length(descricao) between 1 and 1000) not valid;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'projetos_nome_tamanho') then
+    alter table public.projetos add constraint projetos_nome_tamanho
+      check (char_length(nome) between 1 and 160) not valid;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'projetos_descricao_tamanho') then
+    alter table public.projetos add constraint projetos_descricao_tamanho
+      check (char_length(descricao) between 1 and 2000) not valid;
+  end if;
+end $$;
+
+-- 5. Apoios: cada pessoa só lê os próprios -------------------------------------------
+-- A policy antiga deixava qualquer um listar "quem apoiou o quê". A contagem
+-- pública continua pela view posts_repercussao (roda com os direitos do dono).
+drop policy if exists "apoios: leitura publica" on public.post_apoios;
+drop policy if exists "apoios: leitura do proprio apoio" on public.post_apoios;
+create policy "apoios: leitura do proprio apoio"
+  on public.post_apoios for select
+  using (auth.uid() = user_id);

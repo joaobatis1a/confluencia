@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:rls": "node --env-file-if-exists=.env.local scripts/testar-rls.mjs"
+    "test:rls": "node --env-file-if-exists=.env.local scripts/testar-rls.mjs",
+    "e2e": "npm run build && playwright test",
+    "test:headers": "node scripts/testar-cabecalhos.mjs"
   },
   "dependencies": {
     "@deck.gl/aggregation-layers": "^9.4.0",
@@ -26,6 +28,8 @@
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",

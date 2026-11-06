@@ -203,16 +203,13 @@ function Numeros({ totais, carregou }: { totais: { relatos: number; apoios: numb
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-10%' }}
             transition={{ delay: i * 0.08, duration: 0.6 }}
-            className="group relative overflow-hidden border-b border-grafite-200 py-8 sm:pr-6 lg:border-b-0 lg:border-r lg:last:border-r-0 lg:[&:not(:first-child)]:pl-6"
+            className="group relative overflow-hidden border-b border-grafite-200 py-8 before:absolute before:inset-x-0 before:bottom-0 before:h-0 before:bg-amarelo-500 before:transition-[height] before:duration-500 before:ease-out group-hover:before:h-full hover:before:h-full sm:pr-6 lg:border-b-0 lg:border-r lg:last:border-r-0 lg:[&:not(:first-child)]:pl-6"
           >
-            <span className="absolute inset-x-0 bottom-0 h-0 bg-amarelo-500 transition-[height] duration-500 ease-out group-hover:h-full" />
-            <div className="relative">
-              <dt className="text-xs font-bold uppercase tracking-[0.2em] text-grafite-500">{n.rotulo}</dt>
-              <dd className="mt-3 font-heading text-[clamp(5rem,9vw,9rem)] font-extrabold leading-[0.85] tracking-[-0.04em] text-grafite-900">
-                <Contador valor={n.valor} />
-              </dd>
-              <dd className="mt-3 font-serif text-xl italic text-grafite-700">{n.frase}</dd>
-            </div>
+            <dt className="relative text-xs font-bold uppercase tracking-[0.2em] text-grafite-500">{n.rotulo}</dt>
+            <dd className="relative mt-3 font-heading text-[clamp(5rem,9vw,9rem)] font-extrabold leading-[0.85] tracking-[-0.04em] text-grafite-900">
+              <Contador valor={n.valor} />
+            </dd>
+            <dd className="relative mt-3 font-serif text-xl italic text-grafite-700">{n.frase}</dd>
           </motion.div>
         ))}
       </dl>
@@ -226,7 +223,7 @@ function Final() {
   useGSAP(
     () => {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      const nome = SplitText.create('[data-nome]', { type: 'chars', mask: 'chars' })
+      const nome = SplitText.create('[data-nome]', { aria: 'none', type: 'chars', mask: 'chars' })
       gsap.from(nome.chars, {
         yPercent: 110,
         stagger: 0.04,

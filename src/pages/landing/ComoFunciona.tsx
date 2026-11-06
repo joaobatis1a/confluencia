@@ -304,7 +304,7 @@ function CenaAcompanhe() {
                   transition={{ duration: 0.45, ease: 'easeOut' }}
                 />
               </span>
-              <span className={`mt-1.5 block text-[10px] font-semibold ${k <= etapa ? 'text-grafite-900' : 'text-grafite-300'}`}>
+              <span className={`mt-1.5 block text-[10px] font-semibold ${k <= etapa ? 'text-grafite-900' : 'text-grafite-500'}`}>
                 {e}
               </span>
             </li>

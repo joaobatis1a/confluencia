@@ -107,7 +107,7 @@ export default function FeedPage() {
   useGSAP(
     () => {
       if (reduzirMovimento()) return
-      const titulo = SplitText.create('[data-anim="titulo"]', { type: 'chars' })
+      const titulo = SplitText.create('[data-anim="titulo"]', { aria: 'none', type: 'chars' })
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } })
       // No celular a gaveta controla a própria posição (arrasto); só anima a opacidade dela.
       if (desktop) tl.from('[data-anim="painel"]', { x: -48, opacity: 0, duration: 0.9 })
@@ -179,6 +179,7 @@ export default function FeedPage() {
         </div>
         <h1
           data-anim="titulo"
+          aria-label="Feed"
           className="mt-1.5 overflow-hidden font-heading text-4xl lg:text-5xl font-extrabold leading-none text-grafite-900"
         >
           Feed

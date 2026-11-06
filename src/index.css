@@ -11,7 +11,7 @@
   --color-amarelo-100: #fff3c4;
   --color-amarelo-300: #ffdd75;
   --color-amarelo-500: #f5b800;
-  --color-amarelo-700: #b8860b;
+  --color-amarelo-700: #8a6406; /* escurecido de #b8860b: o texto dourado passa a ter contraste 4,5:1 (WCAG AA) */
   --color-amarelo-900: #6b4e00;
 
   /* Neutros (grafite quente) */
@@ -21,7 +21,7 @@
   --color-grafite-100: #f3f0e8;
   --color-grafite-200: #e4e1d9;
   --color-grafite-300: #cfcbc0;
-  --color-grafite-500: #7c776c;
+  --color-grafite-500: #6a655a; /* escurecido de #7c776c: texto secundário passa a ter contraste 4,5:1 (WCAG AA) */
   --color-grafite-700: #47443d;
   --color-grafite-900: #1b1813;
 
