@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CATEGORIAS, type Categoria, type PostRepercussao } from '../../types/database'
@@ -48,6 +48,9 @@ export default function CentralRelatosPage() {
   const [busca, setBusca] = useState('')
   const [ordem, setOrdem] = useState<Ordem>('urgencia')
   const [selecionado, setSelecionado] = useState<string | null>(null)
+  const [limite, setLimite] = useState(30)
+  const [rolou, setRolou] = useState(false)
+  const listaRef = useRef<HTMLDivElement>(null)
 
   const todos = useMemo(() => relatos ?? [], [relatos])
 
@@ -75,10 +78,35 @@ export default function CentralRelatosPage() {
   const base = todos.filter((r) => passa(r, 'cat'))
   const aberto = todos.find((r) => r.id === selecionado) ?? null
 
+  // Teclado: ↑/↓ (ou k/j) percorrem a fila, Esc fecha o detalhe. Não interfere em campos de texto.
   useEffect(() => {
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setSelecionado(null)
-    window.addEventListener('keydown', esc)
-    return () => window.removeEventListener('keydown', esc)
+    const tecla = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement
+      if (alvo.closest('input, textarea, select, [contenteditable]')) return
+      if (e.key === 'Escape') return setSelecionado(null)
+      const desce = e.key === 'ArrowDown' || e.key === 'j'
+      const sobe = e.key === 'ArrowUp' || e.key === 'k'
+      if (!desce && !sobe) return
+      e.preventDefault()
+      const ids = visiveis.map((r) => r.id)
+      const i = selecionado ? ids.indexOf(selecionado) : -1
+      const proximo = ids[Math.min(ids.length - 1, Math.max(0, i + (desce ? 1 : -1)))]
+      if (proximo) setSelecionado(proximo)
+    }
+    window.addEventListener('keydown', tecla)
+    return () => window.removeEventListener('keydown', tecla)
+  }, [visiveis, selecionado])
+
+  // O relato escolhido sempre fica à vista dentro da lista.
+  useEffect(() => {
+    if (selecionado) document.getElementById(`ticket-${selecionado}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [selecionado])
+
+  const aoRolar = useCallback(() => {
+    const el = listaRef.current
+    if (!el) return
+    setRolou(el.scrollTop > 240)
+    if (el.scrollTop + el.clientHeight > el.scrollHeight - 240) setLimite((l) => l + 30)
   }, [])
 
   function filtrar(f: FaseFiltro, u: Urgencia) {
@@ -86,6 +114,7 @@ export default function CentralRelatosPage() {
     setUrg(u)
     setCategoria('todas')
     setSelecionado(null)
+    setLimite(30)
   }
 
   return (
@@ -165,35 +194,71 @@ export default function CentralRelatosPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-        {/* Fila */}
-        <div className="min-w-0">
-          <p className="mb-3 text-sm text-grafite-500" aria-live="polite">
-            <b className="text-grafite-900">{visiveis.length}</b> {visiveis.length === 1 ? 'relato' : 'relatos'} neste recorte
-          </p>
-          {relatos === null ? (
-            <ul className="space-y-3" aria-busy>
-              {[0, 1, 2, 3].map((i) => (
-                <li key={i} className="h-32 animate-pulse rounded-[24px] bg-grafite-100" />
-              ))}
-            </ul>
-          ) : visiveis.length === 0 ? (
-            <div className="rounded-[28px] border-2 border-dashed border-grafite-200 bg-white/60 px-6 py-14 text-center">
-              <p className="font-heading text-xl font-bold text-grafite-900">{fase === 'pendente' && urg === 'todas' && categoria === 'todas' && !busca ? 'Fila em dia' : 'Nada neste recorte'}</p>
-              <p className="mt-1 text-sm text-grafite-500">Tire um filtro para ver mais relatos.</p>
-              <button type="button" onClick={() => { setCategoria('todas'); setUrg('todas'); setBusca(''); setFase('todos') }} className="mt-4 rounded-full bg-amarelo-500 px-5 py-2 text-sm font-bold text-grafite-900">
-                Limpar filtros
-              </button>
+        {/* Fila: no computador tem altura própria e rola por dentro */}
+        <div className="min-w-0 lg:sticky lg:top-20 lg:flex lg:h-[calc(100vh-6.5rem)] lg:flex-col">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm text-grafite-500" aria-live="polite">
+              <b className="text-grafite-900">{visiveis.length}</b> {visiveis.length === 1 ? 'relato' : 'relatos'} neste recorte
+            </p>
+            <p className="hidden text-xs text-grafite-500 lg:block">
+              <kbd className="rounded bg-grafite-100 px-1.5 py-0.5 font-mono text-[10px]">↑</kbd> <kbd className="rounded bg-grafite-100 px-1.5 py-0.5 font-mono text-[10px]">↓</kbd> navegar · <kbd className="rounded bg-grafite-100 px-1.5 py-0.5 font-mono text-[10px]">Esc</kbd> fechar
+            </p>
+          </div>
+          <div className="relative lg:min-h-0 lg:flex-1">
+            <div
+              ref={listaRef}
+              onScroll={aoRolar}
+              tabIndex={-1}
+              className="rolagem-fina lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:py-1 lg:pr-2 lg:[mask-image:linear-gradient(to_bottom,transparent,black_14px,black_calc(100%-28px),transparent)]"
+            >
+              {relatos === null ? (
+                <ul className="space-y-3" aria-busy>
+                  {[0, 1, 2, 3].map((i) => (
+                    <li key={i} className="h-32 animate-pulse rounded-[24px] bg-grafite-100" />
+                  ))}
+                </ul>
+              ) : visiveis.length === 0 ? (
+                <div className="rounded-[28px] border-2 border-dashed border-grafite-200 bg-white/60 px-6 py-14 text-center">
+                  <p className="font-heading text-xl font-bold text-grafite-900">{fase === 'pendente' && urg === 'todas' && categoria === 'todas' && !busca ? 'Fila em dia' : 'Nada neste recorte'}</p>
+                  <p className="mt-1 text-sm text-grafite-500">Tire um filtro para ver mais relatos.</p>
+                  <button type="button" onClick={() => { setCategoria('todas'); setUrg('todas'); setBusca(''); setFase('todos') }} className="mt-4 rounded-full bg-amarelo-500 px-5 py-2 text-sm font-bold text-grafite-900">
+                    Limpar filtros
+                  </button>
+                </div>
+              ) : (
+                <ul className="space-y-3 pb-6">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {visiveis.slice(0, limite).map((r, i) => (
+                      <Ticket key={r.id} relato={r} indice={i} ativo={r.id === selecionado} onAbrir={() => setSelecionado(r.id === selecionado ? null : r.id)} />
+                    ))}
+                  </AnimatePresence>
+                  <li className="pt-1 text-center text-xs text-grafite-500">
+                    {visiveis.length > limite ? (
+                      <button type="button" onClick={() => setLimite((l) => l + 30)} className="rounded-full px-4 py-2 font-bold text-grafite-700 ring-1 ring-grafite-300 hover:bg-white">
+                        Mostrar mais {Math.min(30, visiveis.length - limite)} ({visiveis.length - limite} restantes)
+                      </button>
+                    ) : (
+                      'Fim da lista'
+                    )}
+                  </li>
+                </ul>
+              )}
             </div>
-          ) : (
-            <ul className="space-y-3">
-              <AnimatePresence mode="popLayout" initial={false}>
-                {visiveis.slice(0, 40).map((r, i) => (
-                  <Ticket key={r.id} relato={r} indice={i} ativo={r.id === selecionado} onAbrir={() => setSelecionado(r.id === selecionado ? null : r.id)} />
-                ))}
-              </AnimatePresence>
-              {visiveis.length > 40 && <li className="pt-2 text-center text-sm text-grafite-500">Mostrando 40 de {visiveis.length}. Use os filtros para afinar.</li>}
-            </ul>
-          )}
+            <AnimatePresence>
+              {rolou && (
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  onClick={() => listaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="absolute bottom-4 right-5 rounded-full bg-grafite-900 px-4 py-2 text-xs font-bold text-white shadow-lg"
+                >
+                  ↑ Voltar ao topo
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Detalhe (ou leitura da cidade) */}
@@ -268,6 +333,7 @@ function Ticket({ relato: r, indice, ativo, onAbrir }: { relato: PostRepercussao
   const categoria = CATEGORIAS.find((c) => c.value === r.categoria)?.label ?? r.categoria
   return (
     <motion.li
+      id={`ticket-${r.id}`}
       layout
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
@@ -290,6 +356,12 @@ function Ticket({ relato: r, indice, ativo, onAbrir }: { relato: PostRepercussao
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
             <b className="text-sm text-grafite-900">{r.bairro}</b>
             <span className="text-grafite-500">{categoria}</span>
+            {dias <= 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-status-verde-50 px-2 py-0.5 text-[10px] font-bold uppercase text-status-verde-700">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-status-verde-500" />
+                novo
+              </span>
+            )}
           </span>
           <span className="mt-1 line-clamp-2 block text-[15px] leading-snug text-grafite-700">{r.descricao}</span>
           <span className="mt-2.5 flex flex-wrap items-center gap-2 text-xs text-grafite-500">

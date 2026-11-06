@@ -9,6 +9,7 @@ import { ETAPAS_PUBLICAS, dataLocal, diasRestantes, indiceEtapa, marcosCumpridos
 import { fotoDoProjeto } from '../projetos/fotos'
 import { hojeIso, situacaoDoMarco } from '../projetos/timeline'
 import AtualizacaoForm from '../projetos/components/AtualizacaoForm'
+import HistoricoAtualizacoes from '../projetos/components/HistoricoAtualizacoes'
 import { marcosAtrasados, useProjetosGestor } from './dados'
 import { CountUp } from './graficos'
 import CentralShell, { KpiCard } from './CentralShell'
@@ -302,6 +303,11 @@ function Gaveta({ projeto: p, resultado, agora, onFechar, onPublicada }: { proje
 
           <section className="rounded-[24px] bg-white p-5 ring-1 ring-grafite-200">
             <AtualizacaoForm projeto={p} onPublicada={onPublicada} onCancelar={onFechar} />
+          </section>
+
+          <section>
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-grafite-500">Já publicado</h3>
+            <HistoricoAtualizacoes projetoId={p.id} />
           </section>
 
           <Link to={`/projetos/${p.id}`} className="inline-block text-sm font-bold text-amarelo-700 hover:underline">

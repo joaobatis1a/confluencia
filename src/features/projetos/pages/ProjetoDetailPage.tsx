@@ -14,6 +14,7 @@ import { CATEGORIA_RGB } from '../../feed/cores'
 import Cedula from '../components/Cedula'
 import VerificarComprovante from '../components/VerificarComprovante'
 import LinhaDoTempo from '../components/LinhaDoTempo'
+import HistoricoAtualizacoes from '../components/HistoricoAtualizacoes'
 import BotaoSalvar from '../components/BotaoSalvar'
 import { useAuth } from '../../../context/AuthContext'
 import RelatoOrigem from '../components/RelatoOrigem'
@@ -289,6 +290,13 @@ function ProjetoDetalhe({ projeto }: { projeto: Projeto }) {
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">Linha do tempo da obra</p>
             <div className="mt-8">
               <LinhaDoTempo marcos={projeto.timeline} />
+            </div>
+          </section>
+
+          <section className="mt-16">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amarelo-700">Atualizações do órgão</p>
+            <div className="mt-6">
+              <HistoricoAtualizacoes projetoId={projeto.id} />
             </div>
           </section>
 

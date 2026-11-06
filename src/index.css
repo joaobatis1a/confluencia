@@ -100,3 +100,22 @@ h1, h2, h3 {
   from { transform: scale(1.12) translate3d(2%, 1.5%, 0) rotate(-1.5deg); }
   to { transform: scale(1.02) translate3d(-2%, -1%, 0) rotate(1deg); }
 }
+
+/* Barra de rolagem fina e discreta, para listas com altura limitada (Central do órgão). */
+.rolagem-fina {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-grafite-300) transparent;
+}
+.rolagem-fina::-webkit-scrollbar {
+  width: 8px;
+}
+.rolagem-fina::-webkit-scrollbar-thumb {
+  background: var(--color-grafite-300);
+  border-radius: 999px;
+}
+.rolagem-fina::-webkit-scrollbar-thumb:hover {
+  background: var(--color-grafite-500);
+}
+.rolagem-fina::-webkit-scrollbar-track {
+  background: transparent;
+}
