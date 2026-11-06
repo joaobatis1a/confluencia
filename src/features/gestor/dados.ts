@@ -5,7 +5,7 @@ import { MOCK_POSTS } from '../feed/mock'
 import { MOCK_ORGAO_ID } from '../projetos/mock'
 import { buscarResultados, listarProjetosDoOrgao } from '../projetos/api'
 import { hojeIso, situacaoDoMarco } from '../projetos/timeline'
-import type { PostRepercussao, Projeto, VotosResultado } from '../../types/database'
+import type { PostRepercussao, Projeto, StatusResposta, VotosResultado } from '../../types/database'
 
 // Dados da visão do órgão (Central de relatos, Quadro de projetos e Painel).
 
@@ -37,7 +37,11 @@ export function useRelatosGestor() {
       cancelado = true
     }
   }, [])
-  return relatos
+  // Depois de responder, o relato muda de situação na hora, sem recarregar.
+  const definirStatus = useCallback((id: string, status: StatusResposta) => {
+    setRelatos((prev) => prev?.map((r) => (r.id === id ? { ...r, status_oficial: status } : r)) ?? prev)
+  }, [])
+  return { relatos, definirStatus }
 }
 
 /** Projetos do órgão logado (inclusive rejeitados) e o resultado das consultas. */

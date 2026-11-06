@@ -3,7 +3,7 @@ import { animate, motion, useMotionValue, useTransform } from 'framer-motion'
 import { CATEGORIAS, type Categoria, type PostRepercussao } from '../../types/database'
 import { CATEGORIA_RGB, rgb } from '../feed/cores'
 
-// Gráficos em SVG puro (sem biblioteca) para a visão do órgão, desenhados para fundo escuro.
+// Gráficos em SVG puro (sem biblioteca) para a visão do órgão.
 
 export function CountUp({ valor, className }: { valor: number; className?: string }) {
   const mv = useMotionValue(0)
@@ -17,11 +17,11 @@ export function CountUp({ valor, className }: { valor: number; className?: strin
 
 export function Painel({ titulo, nota, children, className = '' }: { titulo?: string; nota?: string; children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-[24px] bg-white/[0.05] p-5 ring-1 ring-white/10 ${className}`}>
+    <section className={`rounded-[24px] bg-white p-5 shadow-[0_2px_8px_-4px_rgba(27,24,19,0.12)] ring-1 ring-grafite-200 ${className}`}>
       {titulo && (
         <div className="mb-4 flex items-baseline justify-between gap-3">
-          <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white/60">{titulo}</h3>
-          {nota && <span className="text-xs text-white/40">{nota}</span>}
+          <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-grafite-500">{titulo}</h3>
+          {nota && <span className="text-xs text-grafite-500">{nota}</span>}
         </div>
       )}
       {children}
@@ -38,11 +38,11 @@ export function RoscaCategorias({ relatos }: { relatos: PostRepercussao[] }) {
   const R = 38
   const C = 2 * Math.PI * R
   const inicios = contagem.map((_, i) => contagem.slice(0, i).reduce((s, c) => s + (c.qtd / total) * C, 0))
-  if (total === 0) return <p className="text-sm text-white/50">Sem relatos neste filtro.</p>
+  if (total === 0) return <p className="text-sm text-grafite-500">Sem relatos neste filtro.</p>
   return (
     <div className="flex items-center gap-5">
       <svg viewBox="0 0 100 100" className="h-32 w-32 shrink-0 -rotate-90" role="img" aria-label="Relatos por categoria">
-        <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="14" />
+        <circle cx="50" cy="50" r={R} fill="none" stroke="#f3f0e8" strokeWidth="14" />
         {contagem.map((c, i) => {
           const len = (c.qtd / total) * C
           return (
@@ -62,7 +62,7 @@ export function RoscaCategorias({ relatos }: { relatos: PostRepercussao[] }) {
             />
           )
         })}
-        <text x="50" y="50" textAnchor="middle" dominantBaseline="central" className="rotate-90 origin-center fill-white font-heading text-[18px] font-extrabold">
+        <text x="50" y="50" textAnchor="middle" dominantBaseline="central" className="origin-center rotate-90 fill-grafite-900 font-heading text-[18px] font-extrabold">
           {total}
         </text>
       </svg>
@@ -70,8 +70,8 @@ export function RoscaCategorias({ relatos }: { relatos: PostRepercussao[] }) {
         {contagem.slice(0, 5).map((c) => (
           <li key={c.value} className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: rgb(CATEGORIA_RGB[c.value as Categoria]) }} />
-            <span className="truncate text-white/80">{c.label}</span>
-            <span className="ml-auto font-bold tabular-nums text-white">{c.qtd}</span>
+            <span className="truncate text-grafite-700">{c.label}</span>
+            <span className="ml-auto font-bold tabular-nums text-grafite-900">{c.qtd}</span>
           </li>
         ))}
       </ul>
@@ -88,18 +88,18 @@ export function BarrasBairros({ relatos, limite = 6 }: { relatos: PostRepercussa
   }
   const linhas = [...porBairro.entries()].sort((a, b) => b[1].peso - a[1].peso).slice(0, limite)
   const maior = Math.max(1, ...linhas.map(([, v]) => v.peso))
-  if (linhas.length === 0) return <p className="text-sm text-white/50">Sem relatos neste filtro.</p>
+  if (linhas.length === 0) return <p className="text-sm text-grafite-500">Sem relatos neste filtro.</p>
   return (
     <ul className="space-y-3">
       {linhas.map(([bairro, v], i) => (
         <li key={bairro}>
           <div className="flex items-baseline justify-between gap-3 text-sm">
-            <span className="truncate font-semibold text-white">{bairro}</span>
-            <span className="shrink-0 text-xs text-white/50">
+            <span className="truncate font-semibold text-grafite-900">{bairro}</span>
+            <span className="shrink-0 text-xs text-grafite-500">
               {v.qtd} {v.qtd === 1 ? 'relato' : 'relatos'}
             </span>
           </div>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-grafite-100">
             <motion.div
               className="h-full rounded-full bg-gradient-to-r from-amarelo-300 to-amarelo-500"
               initial={{ width: 0 }}
@@ -136,13 +136,13 @@ export function Sparkline({ relatos }: { relatos: PostRepercussao[] }) {
   const linha = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')
   return (
     <div>
-      <p className="font-heading text-4xl font-extrabold text-white">
-        {total} <span className="text-base font-semibold text-white/50">relatos em 14 dias</span>
+      <p className="font-heading text-4xl font-extrabold text-grafite-900">
+        {total} <span className="text-base font-semibold text-grafite-500">relatos em 14 dias</span>
       </p>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-3 h-16 w-full" role="img" aria-label="Relatos por dia">
         <defs>
           <linearGradient id="spark" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#f5b800" stopOpacity="0.45" />
+            <stop offset="0" stopColor="#f5b800" stopOpacity="0.4" />
             <stop offset="1" stopColor="#f5b800" stopOpacity="0" />
           </linearGradient>
         </defs>
