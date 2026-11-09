@@ -99,7 +99,7 @@ As telas nunca chamam o Supabase direto: tudo passa por `features/projetos/api.t
 | Com `.env.local` (Supabase configurado) | Lê `projetos` e `votos_resultado`; vota pela função `votar`; atualiza pelo RLS do órgão dono |
 | Sem `.env.local` (modo demonstração) | Usa os mocks de `mock.ts` e guarda votos e comprovantes em memória |
 
-`vitrine.ts` soma aos projetos do banco os seis projetos de exemplo (p1 a p6), que têm foto, proposta, estimativa e galeria. Com o banco ligado, eles aparecem mas não aceitam voto (não existem na tabela).
+`vitrine.ts` soma aos projetos do banco os seis projetos de exemplo (p1 a p6), que têm foto, proposta, estimativa e galeria. Depois do script `supabase/semana5_limpeza_e_projetos.sql`, os seis existem no banco com ids fixos e aceitam voto; antes dele, apareciam mas não aceitavam (não existiam na tabela).
 
 ### Votação
 
@@ -117,7 +117,7 @@ Detalhes em [Votação](votacao.md) e [Banco de dados](banco-de-dados.md).
 |---|---|
 | Feed (`MapaVivo.tsx`) | MapLibre com estilo Positron do OpenFreeMap. deck.gl desenha colunas hexagonais de repercussão (3D) ou pontos por categoria (2D). Pinos a menos de 30 px na tela viram um grupo com o número de relatos (`feed/agrupar.ts`); o clique aproxima até separar. Tooltip escapa o texto do usuário antes de virar HTML |
 | Detalhe do relato (`MapaOrbita.tsx`) | Câmera inclinada que dá meia volta em 12 s em torno do ponto e para |
-| Relatar (`MapaEscolha.tsx`) | MapLibre para marcar o ponto; `isWithinRecifeMetro` (de `lib/regiao.ts`) recusa pontos fora da Região Metropolitana |
+| Relatar (`MapaEscolha.tsx`) | MapLibre para marcar o ponto; `dentroDoRecife` (de `lib/recife.ts`, contorno do município) recusa pontos fora da cidade com "Área bloqueada". O banco repete a regra na 0012 |
 | Landing (`MapaCidade.tsx`) | Renderiza o Recife em 3D uma vez, tira uma "foto" do canvas (`preserveDrawingBuffer` + `toDataURL`), posiciona os pinos em porcentagem e desmonta o mapa. A animação continua só com CSS, sem WebGL rodando |
 
 ## Desempenho
@@ -140,7 +140,9 @@ Quem prefere menos movimento (`prefers-reduced-motion`) recebe a versão sem ani
 
 - A chave do Supabase no front é a pública (`anon`). Tudo que importa é protegido no banco pelo RLS, não pela interface.
 - Voto: insert direto em `votos` fechado; só a função `votar` grava; opção nunca é legível individualmente.
-- Conta institucional: o próprio usuário não consegue se marcar como verificado (update de `profiles` liberado só por coluna: `nome`, `apelido`, `bairro`, `bio`).
+- Conta institucional: o próprio usuário não consegue se marcar como verificado (update de `profiles` liberado só por coluna: `nome`, `apelido`, `bairro`, `bio`, `avatar_url`, `capa_url`). Conta institucional não vota (0013).
+- Cidade e bairro: relato fora do Recife (0012) ou com bairro fora da lista oficial (0014) é recusado pelo banco, não só pela tela.
+- Fotos: só do bucket `fotos`, cada pessoa na própria pasta, até 5 MB, JPEG, PNG ou WebP (0015).
 - Projeto: só institucional verificado cria; só o órgão dono edita, e só as colunas de gestão; rejeitado fica visível só para o dono.
 - Anonimato: em Segurança o banco força `anonimo = true` por gatilho; a 0009 fecha a coluna do autor na tabela `posts`.
 - Texto de usuário nunca vira HTML sem escapar (tooltip do mapa).

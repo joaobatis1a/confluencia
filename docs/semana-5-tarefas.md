@@ -28,7 +28,7 @@ Apresentação: primeira semana de dezembro de 2026 (data exata a confirmar).
 | Decidir o selo da conta pessoal do Guilherme ("Prefeitura do Recife (teste)") | Guilherme | Manter ou rodar o `update` opcional do final do script | Decisão tomada e anotada |
 | Testar em produção, depois do banco | Ana | Entrar como cidadã: relatar com e sem foto, apagar o próprio relato, trocar capa e foto de perfil, votar | Checklist abaixo sem falhas |
 | Testar em produção como gestor | Guilherme | Entrar como gestor demo: painel, fila do Feed, novo projeto, tentar votar (deve recusar) | Checklist abaixo sem falhas |
-| Atualizar documentação (`banco-de-dados.md`, `votacao.md`, `guia-de-uso.md`, `README`) com 0011–0015, bairros, fotos e Recife | Ana | Seguir o formato dos documentos existentes | Docs batem com o sistema |
+| Atualizar documentação (`banco-de-dados.md`, `votacao.md`, `guia-de-uso.md`, `README`) com 0011–0015, bairros, fotos e Recife | Ana | Seguir o formato dos documentos existentes | **Feito** (neste PR): texto atualizado; as capturas de tela do guia de uso ainda são de 29/10 |
 | Atualizar `uso-de-ia.md` e `contribuicoes.md` com a semana 5 | João | Manter o texto curto | **Feito** (neste PR) |
 | Gravar de novo a demonstração (vídeo) com o sistema novo, se quiserem | João | Reeditar `video3.html` com as telas do painel v2 | Vídeo final de até 2 minutos |
 | Confirmar a data da apresentação e trocar "data exata a confirmar" nos documentos | João | Buscar a data com a coordenação | Data escrita nos documentos |
