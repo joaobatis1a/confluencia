@@ -11,10 +11,10 @@ Para **escrever** posts, use a tabela `posts`. Para **ler** o Feed, use a view `
 | `id` | uuid | gerado automaticamente | |
 | `user_id` | uuid | sim | quem postou, vem do usuário logado |
 | `categoria` | enum | sim | mobilidade, iluminacao, seguranca, saneamento, pracas_lazer, saude, educacao, outros (sem acento, `pracas_lazer` com underscore) |
-| `bairro` | texto | sim | |
+| `bairro` | texto | sim | um dos 94 bairros oficiais (`src/lib/bairros.ts`); o banco grava o nome oficial e recusa outro (0014, erro `CF011`) |
 | `descricao` | texto | sim | |
-| `foto_url` | texto | não | upload fica para próxima fase |
-| `latitude` | número decimal | sim | validado no frontend (sem check no banco por enquanto) |
+| `foto_url` | texto | não | endereço público do bucket `fotos` (0015); o banco recusa link de fora. Sem foto, o card usa a foto da região do bairro |
+| `latitude` | número decimal | sim | tem de estar dentro do Recife: validado na tela (`src/lib/recife.ts`) e no banco (0012, erro `CF010`) |
 | `longitude` | número decimal | sim | idem |
 | `repercussao` | número inteiro | não usar | coluna legada, sempre 0. O valor real vem da view `posts_repercussao` |
 | `created_at` | data/hora | automático | |
@@ -108,9 +108,12 @@ Definida em `supabase/migrations/0003_projetos_votos.sql`.
 | `id` | uuid | = auth.users.id | criado automaticamente no cadastro |
 | `nome` | texto | opcional (default vazio) | o usuário pode editar o próprio nome |
 | `institucional_verificado` | booleano | sim (default false) | aprovação manual pelo Guilherme no painel do Supabase; o usuário não consegue alterar |
-| `orgao_nome` | texto | não | só alterado pelo painel do Supabase || `apelido` | texto | não (0006) | único, 3–20 caracteres `[a-z0-9_.]`; é como a pessoa aparece no Feed |
-| `bairro` | texto | não (0006) | bairro do perfil público |
+| `orgao_nome` | texto | não | só alterado pelo painel do Supabase |
+| `apelido` | texto | não (0006) | único, 3–20 caracteres `[a-z0-9_.]`; é como a pessoa aparece no Feed |
+| `bairro` | texto | não (0006) | bairro do perfil público; se vier, tem de ser da lista oficial (0014) |
 | `bio` | texto | não (0006) | até 160 caracteres |
+| `avatar_url` | texto | não (0015) | foto de perfil, do bucket `fotos` |
+| `capa_url` | texto | não (0015) | capa do perfil, do bucket `fotos` |
 
 ## Camada social (0006_rede_social.sql — dono: João)
 

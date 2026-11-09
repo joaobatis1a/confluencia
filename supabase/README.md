@@ -28,8 +28,14 @@ npx supabase db push
 | `0009_fechar_autor.sql` | fecha a leitura do autor em `posts` (o anonimato passa a valer no banco). Rode por último, quando o app já estiver lendo pela view `posts_repercussao` | João (repaginada) |
 | `0010_seguranca_desempenho.sql` | remove `registrar_voto` (fica só `votar`), tira projetos rejeitados de `comprovantes_publicos`, resposta oficial só com projeto do próprio órgão, `search_path` fixo em `handle_new_user`, índices da `posts_repercussao`, do painel do gestor e do perfil | Guilherme 4.2/4.3 |
 | `0011_origem_e_comprovantes.sql` | `origem_post_id` com `on delete set null` (apagar um relato que virou projeto não dá mais erro), índices para "relato virou projeto?" e para a listagem, `verificar_comprovante` usando índice. Rode depois da 0010 | Ana 4.1/4.2 |
+| `0012_so_no_recife.sql` | `limite_cidade`, `dentro_do_recife()` e gatilho que recusa relato com ponto fora do Recife (`CF010`) | João (Semana 5) |
+| `0013_gestor_nao_vota.sql` | `votar()` recusa conta de órgão verificado (`CF003`) | João (Semana 5) |
+| `0014_bairros_oficiais.sql` | `bairros_recife` (94 bairros), `bairro_oficial()` e gatilhos em `posts` e `profiles` (`CF011`) | João (Semana 5) |
+| `0015_fotos.sql` | `avatar_url` e `capa_url` em `profiles`, checagem de foto do bucket, bucket `fotos` e 3 políticas no Storage | João (Semana 5) |
 
-**Testar as migrations sem tocar no Supabase:** `supabase/testes/testar-migrations.mjs` aplica 0001 → 0011 num Postgres em memória (PGlite) e confere os cenários da Semana 4. Veja o cabeçalho do arquivo.
+**Testar as migrations sem tocar no Supabase:** `supabase/testes/testar-migrations.mjs` aplica as migrations num Postgres em memória (PGlite) e confere os cenários da Semana 4 (até a 0011). Com 0012 em diante, as migrations aplicam e reaplicam sem erro, mas os relatos de teste do script usam um ponto fora do Recife e são recusados: troque as coordenadas por uma da cidade (ex.: -8.0631, -34.8711). O bucket da 0015 não roda no PGlite (sem schema `storage`). Veja o cabeçalho do arquivo.
+
+**Script da Semana 5:** `semana5_limpeza_e_projetos.sql`, depois da 0014. O **Passo 1** só lista o que sai; confira e rode o **Passo 2** (apaga relatos e projetos `[SEED]`, lixo de teste e a conta de QA, padroniza bairros e grava os seis projetos da vitrine). Apaga dados: faça um `pg_dump` antes (ver [Backup](#backup)).
 
 **Dados de exemplo (rode depois das migrations):** `seed-social-demo.sql` (perfis das contas demo, promove o gestor demo a verificado, comentários e respostas oficiais) e depois `seed_projetos.sql` (projetos `[SEED]` do gestor demo, com a Av. Boa Viagem em consulta até 20/12). Os dois são idempotentes.
 
@@ -44,7 +50,9 @@ Depois de aplicar, copie a **Project URL** e a **anon public key** (Project Sett
 5. `0009_fechar_autor.sql` (o app no ar já lê pela view; confira o Feed carregando)
 6. `0010_seguranca_desempenho.sql`
 7. `0011_origem_e_comprovantes.sql` (entrou depois, com a Semana 4 da Ana)
-8. Authentication → Sign In / Providers → desligue **Allow new users to sign up**. O botão "Criar conta" do app já está desativado, mas sem isso a API continua aceitando cadastro com a chave pública. As contas demo continuam entrando.
+8. `0012` → `0015` (Semana 5), na ordem. Antes, `npm run test:rls`; depois, confira em **Storage** o bucket `fotos` (público, 5 MB, jpeg/png/webp, 3 políticas)
+9. `semana5_limpeza_e_projetos.sql` (Passo 1, conferir, Passo 2)
+10. Authentication → Sign In / Providers → desligue **Allow new users to sign up**. O botão "Criar conta" do app já está desativado, mas sem isso a API continua aceitando cadastro com a chave pública. As contas demo continuam entrando.
 
 Essa sequência foi ensaiada do zero num Postgres local (PGlite) partindo do estado de produção: tudo aplica, e a 0010 e os seeds podem rodar de novo.
 
