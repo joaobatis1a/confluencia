@@ -78,21 +78,21 @@ function NavCentral() {
   const itens: ItemNav[] = [
     {
       to: '/feed',
-      label: 'Feed',
-      curto: 'Feed',
+      label: ehGestor ? 'Central' : 'Feed',
+      curto: ehGestor ? 'Central' : 'Feed',
       icone: ICONES.feed,
       ativo: (p) => p === '/' || p.startsWith('/feed'),
     },
     {
       to: '/projetos',
-      label: 'Projetos',
-      curto: 'Projetos',
+      label: ehGestor ? 'Quadro' : 'Projetos',
+      curto: ehGestor ? 'Quadro' : 'Projetos',
       icone: ICONES.projetos,
       ativo: (p) => p.startsWith('/projetos') && p !== '/projetos/novo',
     },
   ]
   if (ehGestor) {
-    itens.push({ to: '/painel', label: 'Painel de gestor', curto: 'Painel', icone: ICONES.painel, ativo: (p) => p === '/painel' || p === '/projetos/novo' })
+    itens.push({ to: '/painel', label: 'Painel do órgão', curto: 'Painel', icone: ICONES.painel, ativo: (p) => p === '/painel' || p === '/projetos/novo' })
   }
 
   return (

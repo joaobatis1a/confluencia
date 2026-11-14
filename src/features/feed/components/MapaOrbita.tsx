@@ -36,10 +36,10 @@ export default function MapaOrbita({ latitude, longitude, cor }: MapaOrbitaProps
         'source-layer': 'building',
         minzoom: 14,
         paint: {
-          'fill-extrusion-color': '#ece4d0',
+          'fill-extrusion-color': '#ebe3cf',
           'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 8],
           'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-          'fill-extrusion-opacity': 0.9,
+          'fill-extrusion-opacity': 1,
         },
       })
     }
@@ -54,6 +54,7 @@ export default function MapaOrbita({ latitude, longitude, cor }: MapaOrbitaProps
 
   return (
     <Map
+      fadeDuration={0}
       ref={mapRef}
       initialViewState={{ latitude, longitude, zoom: 16.4, pitch: 62, bearing: -20 }}
       mapStyle={ESTILO}

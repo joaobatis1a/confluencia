@@ -5,6 +5,7 @@ import RequireInstitutional from './components/RequireInstitutional'
 import PageTransition from './components/PageTransition'
 import NavBar from './components/NavBar'
 import BotaoRelatar from './components/BotaoRelatar'
+import PorVisao from './components/PorVisao'
 
 // Cada página vira um pedaço separado do JavaScript, baixado só quando é aberta:
 // quem chega pela landing não precisa baixar o mapa 3D do Feed, e vice-versa.
@@ -19,6 +20,8 @@ const PainelGestorPage = lazy(() => import('./features/projetos/pages/PainelGest
 const CriarProjetoPage = lazy(() => import('./features/projetos/pages/CriarProjetoPage'))
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
 const PerfilPage = lazy(() => import('./pages/perfil/PerfilPage'))
+const CentralRelatosPage = lazy(() => import('./features/gestor/CentralRelatosPage'))
+const QuadroProjetosPage = lazy(() => import('./features/gestor/QuadroProjetosPage'))
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -26,10 +29,10 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/feed" element={<PageTransition><FeedPage /></PageTransition>} />
+        <Route path="/feed" element={<PageTransition><PorVisao morador={<FeedPage />} gestor={<CentralRelatosPage />} /></PageTransition>} />
         <Route path="/feed/novo" element={<PageTransition><CreatePostPage /></PageTransition>} />
         <Route path="/feed/:id" element={<PageTransition><PostDetailPage /></PageTransition>} />
-        <Route path="/projetos" element={<PageTransition><ProjetosPage /></PageTransition>} />
+        <Route path="/projetos" element={<PageTransition><PorVisao morador={<ProjetosPage />} gestor={<QuadroProjetosPage />} /></PageTransition>} />
         <Route
           path="/projetos/novo"
           element={

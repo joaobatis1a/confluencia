@@ -23,7 +23,7 @@ export default function TextoRevelado({ children, className = '', cor = 'var(--c
       const el = ref.current
       if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
       const corTexto = getComputedStyle(el).color
-      const split = SplitText.create(el, { type: 'lines' })
+      const split = SplitText.create(el, { aria: 'none', type: 'lines' })
       const tl = gsap.timeline({ scrollTrigger: { trigger: el, start: 'top 82%', once: true } })
 
       split.lines.forEach((linha, i) => {

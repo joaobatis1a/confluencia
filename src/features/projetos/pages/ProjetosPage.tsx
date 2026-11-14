@@ -83,7 +83,7 @@ export default function ProjetosPage() {
   useGSAP(
     () => {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      const titulo = SplitText.create('[data-anim="titulo"]', { type: 'chars' })
+      const titulo = SplitText.create('[data-anim="titulo"]', { aria: 'none', type: 'chars' })
       gsap
         .timeline({ defaults: { ease: 'power4.out' } })
         .from(titulo.chars, { yPercent: 110, opacity: 0, stagger: 0.05, duration: 0.8 })
@@ -102,6 +102,7 @@ export default function ProjetosPage() {
           </p>
           <h1
             data-anim="titulo"
+            aria-label="Projetos"
             className="mt-2 overflow-hidden font-heading text-5xl sm:text-6xl font-extrabold leading-none text-grafite-900"
           >
             Projetos

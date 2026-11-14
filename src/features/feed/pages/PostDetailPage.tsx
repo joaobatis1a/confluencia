@@ -88,7 +88,7 @@ function RelatoDetalhe({ post, onAtualizar }: { post: PostRepercussao; onAtualiz
   useGSAP(
     () => {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      const titulo = SplitText.create('[data-titulo-relato]', { type: 'chars', mask: 'chars' })
+      const titulo = SplitText.create('[data-titulo-relato]', { aria: 'none', type: 'chars', mask: 'chars' })
       gsap
         .timeline({ defaults: { ease: 'power4.out' } })
         .from(titulo.chars, { yPercent: 110, duration: 0.9, stagger: 0.035, delay: 0.2 })
@@ -140,6 +140,7 @@ function RelatoDetalhe({ post, onAtualizar }: { post: PostRepercussao; onAtualiz
             </div>
             <h1
               data-titulo-relato
+              aria-label={post.bairro}
               className="mt-4 font-heading text-6xl sm:text-8xl font-extrabold leading-[0.9] tracking-tight text-grafite-900"
             >
               {post.bairro}

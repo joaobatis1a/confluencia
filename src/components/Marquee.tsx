@@ -22,7 +22,7 @@ export default function Marquee({ itens, duracao = 28, reverso = false, classNam
   )
 
   return (
-    <div className={`overflow-hidden whitespace-nowrap ${className}`} aria-label={itens.join(' · ')}>
+    <div className={`overflow-hidden whitespace-nowrap ${className}`} role="img" aria-label={itens.join(' · ')}>
       <div
         aria-hidden
         className="anima-continua flex w-max will-change-transform"

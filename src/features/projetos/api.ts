@@ -185,6 +185,96 @@ export const PROXIMOS_STATUS: Record<ProjetoStatus, ProjetoStatus[]> = {
   concluido: [],
 }
 
+/** Uma atualização publicada pelo órgão (histórico do projeto, migration 0016). */
+export interface AtualizacaoHistorico {
+  id: string
+  projeto_id: string
+  texto: string | null
+  foto_url: string | null
+  status_de: ProjetoStatus | null
+  status_para: ProjetoStatus | null
+  marco_nome: string | null
+  marco_data: string | null
+  created_at: string
+}
+
+/** O que a atualização muda. Pelo menos um dos campos, ou o texto. */
+export interface NovaAtualizacao {
+  marco?: number
+  dataReal?: string
+  novoStatus?: ProjetoStatus
+  consultaFim?: string
+  texto?: string
+  fotoUrl?: string | null
+}
+
+// Histórico do modo demonstração (some ao recarregar).
+const MOCK_HISTORICO: AtualizacaoHistorico[] = []
+
+export async function listarAtualizacoes(projetoId: string): Promise<AtualizacaoHistorico[]> {
+  if (!isSupabaseConfigured) return MOCK_HISTORICO.filter((a) => a.projeto_id === projetoId)
+  const { data, error } = await supabase.from('projeto_atualizacoes').select('*').eq('projeto_id', projetoId).order('created_at', { ascending: false })
+  // Antes da 0016 a tabela não existe: sem histórico, sem erro na tela.
+  if (error) return []
+  return (data ?? []) as AtualizacaoHistorico[]
+}
+
+const MENSAGENS_BANCO: Record<string, string> = {
+  CF020: '',
+  CF021: '',
+  '42501': 'Você não tem permissão para atualizar este projeto.',
+  '28000': 'Entre com a conta do órgão para publicar.',
+}
+
+/**
+ * Publica uma atualização pelo servidor (publicar_atualizacao, 0016): ele confere
+ * dono, etapa permitida, marco e prazo, e grava o histórico. Se a migration ainda
+ * não foi aplicada, cai no jeito antigo (update direto) para o sistema não parar.
+ */
+export async function publicarAtualizacao(projeto: Projeto, a: NovaAtualizacao): Promise<Projeto> {
+  if (!isSupabaseConfigured) {
+    const atual = MOCK_PROJETOS.find((p) => p.id === projeto.id)
+    if (!atual) throw new Error('Projeto não encontrado.')
+    const de = atual.status
+    if (a.marco !== undefined) atual.timeline = atual.timeline.map((m, i) => (i === a.marco ? { ...m, data_real: a.dataReal ?? null } : m))
+    if (a.novoStatus) atual.status = a.novoStatus
+    if (a.consultaFim) atual.consulta_fim = a.consultaFim
+    MOCK_HISTORICO.unshift({
+      id: crypto.randomUUID(),
+      projeto_id: atual.id,
+      texto: a.texto?.trim() || null,
+      foto_url: a.fotoUrl ?? null,
+      status_de: a.novoStatus && a.novoStatus !== de ? de : null,
+      status_para: a.novoStatus && a.novoStatus !== de ? a.novoStatus : null,
+      marco_nome: a.marco !== undefined ? (projeto.timeline[a.marco]?.nome ?? null) : null,
+      marco_data: a.dataReal ?? null,
+      created_at: new Date().toISOString(),
+    })
+    return { ...atual }
+  }
+  const { data, error } = await supabase.rpc('publicar_atualizacao', {
+    p_projeto_id: projeto.id,
+    p_marco: a.marco ?? null,
+    p_data_real: a.dataReal ?? null,
+    p_novo_status: a.novoStatus ?? null,
+    p_consulta_fim: a.consultaFim ?? null,
+    p_texto: a.texto?.trim() || null,
+    p_foto_url: a.fotoUrl ?? null,
+  })
+  if (error) {
+    if (error.code === 'PGRST202' || /publicar_atualizacao/.test(error.message) && /not find|does not exist/i.test(error.message)) {
+      // Migration 0016 ainda não aplicada: jeito antigo, sem histórico.
+      const mudancas: AtualizacaoProjeto = {}
+      if (a.marco !== undefined) mudancas.timeline = projeto.timeline.map((m, i) => (i === a.marco ? { ...m, data_real: a.dataReal ?? null } : m))
+      if (a.novoStatus) mudancas.status = a.novoStatus
+      if (a.consultaFim) mudancas.consulta_fim = a.consultaFim
+      return atualizarProjeto(projeto.id, mudancas)
+    }
+    throw new Error(MENSAGENS_BANCO[error.code ?? ''] || error.message)
+  }
+  return data as Projeto
+}
+
 export interface AtualizacaoProjeto {
   status?: ProjetoStatus
   timeline?: MarcoTimeline[]
